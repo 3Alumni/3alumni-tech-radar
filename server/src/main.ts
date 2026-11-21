@@ -14,7 +14,13 @@ async function bootstrap() {
   // Fedlex act text is posted to /summaries/act. The default JSON limit is 100 KB.
   app.useBodyParser("json", { limit: "5mb" });
   app.enableCors({
-    origin: ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"],
+    origin: (origin, callback) => {
+      const allowed =
+        !origin ||
+        /^https?:\/\/(localhost|127\.0\.0\.1):(5173|5174)$/.test(origin) ||
+        /^https:\/\/[\w-]+\.up\.railway\.app$/.test(origin);
+      callback(null, allowed);
+    },
   });
   await app.listen(process.env.PORT ?? 3000);
 }
