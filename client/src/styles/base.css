@@ -115,9 +115,12 @@ a:hover { color: var(--color-action-strong); text-decoration-thickness: 2px; }
 .has-tip { position: relative; }
 .tip {
   position: absolute; z-index: 8; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+  translate: 0 4px;
   background: var(--color-text); color: var(--color-surface); font-size: 14px; line-height: 20px; font-weight: 400;
-  padding: 6px 10px; white-space: nowrap; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity .12s ease;
+  padding: 6px 10px; white-space: nowrap; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity .12s ease, translate .16s var(--ease-out);
+  box-shadow: 0 0 0 1px var(--color-text);
 }
+.has-tip:hover > .tip, .has-tip:focus-visible > .tip, .has-tip:hover .tip-in, .has-tip:focus-visible .tip-in, .on > .tip { translate: 0 0; }
 .tip::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border: 5px solid transparent; border-top-color: var(--color-text); }
 .tip b { font-weight: 700; }
 .tip-b { bottom: auto; top: calc(100% + 10px); }
@@ -127,6 +130,15 @@ a:hover { color: var(--color-action-strong); text-decoration-thickness: 2px; }
 .tip-l { left: 0; transform: none; }
 .tip-l::after { left: 12px; }
 .has-tip:hover > .tip, .has-tip:focus-visible > .tip, .has-tip:hover .tip-in, .has-tip:focus-visible .tip-in { opacity: 1; visibility: visible; }
+
+/* Charts: shared motion. Bars grow from their baseline, staggered by --i; columns rise.
+   Everything here is switched off by the prefers-reduced-motion rule at the end of this file. */
+@keyframes bar-grow { from { transform: scaleX(0); } }
+@keyframes col-rise { from { transform: scaleY(0); } }
+@keyframes halo { 0% { transform: scale(1); opacity: .55; } 100% { transform: scale(2.6); opacity: 0; } }
+@keyframes tick-in { from { opacity: 0; transform: translateY(6px); } }
+.grow-x { transform-origin: left center; animation: bar-grow var(--dur-grow) var(--ease-out) both; animation-delay: calc(var(--i, 0) * var(--stagger)); }
+.grow-y { transform-origin: center bottom; animation: col-rise var(--dur-grow) var(--ease-out) both; animation-delay: calc(var(--i, 0) * 40ms); }
 
 /* Cards and page layout */
 .view { display: flex; flex-direction: column; gap: var(--space-5); width: 100%; }

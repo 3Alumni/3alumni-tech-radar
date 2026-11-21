@@ -6,6 +6,7 @@ import SourceChip from '@/components/ui/SourceChip.vue'
 import RoleRegionFilters from '@/components/ui/RoleRegionFilters.vue'
 import TrendLine from '@/components/charts/TrendLine.vue'
 import CantonBars from '@/components/charts/CantonBars.vue'
+import CantonMap from '@/components/charts/CantonMap.vue'
 import { ICON, fmtNum } from '@/lib/format'
 import { useInsights } from '@/composables/useInsights'
 import { useSalaryDialog } from '@/composables/useSalaryDialog'
@@ -57,6 +58,11 @@ const kpiShown = useCountUp(ins.kpiValue)
         </div>
         <CardState :empty="!ins.cantonsSorted.value.length">
           <template #empty><b>No job ads yet</b> for this role in any canton.</template>
+          <CantonMap
+            :cantons="ins.cantonsSorted.value"
+            :selected="ins.region.value"
+            @pick="ins.toggleRegion"
+          />
           <CantonBars
             :cantons="ins.cantonsSorted.value"
             :selected="ins.region.value"

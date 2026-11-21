@@ -120,7 +120,7 @@ let played = false
 
 <template>
   <div class="race-head">
-    <span class="race-month">{{ monthLabel }}</span>
+    <span :key="monthLabel" class="race-month">{{ monthLabel }}</span>
     <span class="small muted hint">Click a role to see its salary</span>
     <button type="button" class="btn btn-ghost" @click="play"><Icon :path="ICON.replay" />Replay</button>
   </div>
@@ -153,7 +153,7 @@ let played = false
 
 <style scoped>
 .race-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; }
-.race-month { font-size: 24px; line-height: 32px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.race-month { font-size: 24px; line-height: 32px; font-weight: 700; font-variant-numeric: tabular-nums; animation: tick-in .3s var(--ease-out); }
 .hint { margin-left: auto; }
 .race { position: relative; }
 .race-row {
@@ -171,7 +171,8 @@ let played = false
 .race-btn:hover .race-name { color: var(--color-action); text-decoration: underline; text-underline-offset: 3px; }
 .race-name { font-weight: 600; }
 .race-track { display: flex; align-items: center; gap: var(--space-2); height: 32px; min-width: 0; }
-.race-fill { position: relative; display: block; height: 32px; width: 0; background: var(--color-text-muted); }
+.race-fill { position: relative; display: block; height: 24px; width: 0; background: var(--color-text-muted); transition: background-color .15s; }
+.race-btn:hover .race-fill:not(.sel), .race-btn:focus-visible .race-fill:not(.sel) { background: var(--color-text); }
 .race-fill.sel { background: var(--color-action); }
 .race-fill .tip { left: 100%; }
 .race-val { font-size: 14px; font-weight: 700; white-space: nowrap; }

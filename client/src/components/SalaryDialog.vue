@@ -86,7 +86,7 @@ function onBackdrop(e: MouseEvent) {
             aria-hidden="true"
             @mouseenter="hover(i)"
           >
-            <span :class="['col-bar', { sel: i === count - 1 }]" :style="{ height: y(m.chf) + '%' }" />
+            <span :class="['col-bar', 'grow-y', { sel: i === count - 1 }]" :style="{ height: y(m.chf) + '%', '--i': i }" />
             <span :class="tipCls(i)"><b>{{ fmtChf(m.chf) }}</b> · {{ fmtMonth(m.month) }}</span>
           </div>
         </div>
@@ -116,7 +116,8 @@ function onBackdrop(e: MouseEvent) {
 .col { position: relative; height: 100%; display: flex; align-items: flex-end; cursor: crosshair; transition: opacity .15s; }
 .cols:hover .col { opacity: .45; }
 .cols:hover .col:hover, .col.on { opacity: 1; }
-.col-bar { display: block; width: 100%; background: var(--color-text-muted); transition: height .4s ease; }
+.col-bar { display: block; width: 100%; background: var(--color-text-muted); transition: height .4s var(--ease-out), background-color .15s; }
+.col:hover .col-bar:not(.sel), .col.on .col-bar:not(.sel) { background: var(--color-text); }
 .col-bar.sel { background: var(--color-action); }
 .col .tip { bottom: auto; top: -8px; }
 .col.on .tip { opacity: 1; visibility: visible; }

@@ -13,6 +13,11 @@
   --color-surface: #FFFFFF;        /* cards, inputs */
   --color-on-action: #FFFFFF;
   --color-overlay: rgba(52, 53, 52, 0.6);
+  /* Sequential greys for magnitude (canton map): light → dark, one hue */
+  --color-seq-1: #D9D9D7;
+  --color-seq-2: #A8A9A7;
+  --color-seq-3: #767775;
+  --color-seq-4: #343534;
   /* Status — always with icon + text */
   --color-success: #1F6B3E;  --color-success-subtle: #EAF3ED;   /* fresh data */
   --color-warning: #7A4F00;  --color-warning-subtle: #FBF3E2;   /* outdated data */
@@ -31,6 +36,11 @@
   --border: 1px;
   --focus: 3px solid var(--color-text); /* outline-offset 2px */
   --target-min: 44px;
+
+  /* Chart motion */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --dur-grow: 700ms;
+  --stagger: 60ms;
 
   /* Layout */
   --header-h: 72px;

@@ -29,7 +29,7 @@ const ins = useInsights()
         </div>
         <CardState :empty="!ins.skills.value.length">
           <template #empty><b>No skills yet.</b> There are no job ads in this snapshot.</template>
-          <SkillBars :skills="ins.skills.value" :role-label="ins.roleLabel.value" />
+          <SkillBars :skills="ins.skills.value" :role-label="ins.roleLabel.value" :highlight="ins.risingSkill.value" />
           <p class="small muted">% of {{ ins.roleLabel.value }} job ads that name the skill</p>
           <SourceChip :names="['ESCO', 'Adzuna']" />
         </CardState>

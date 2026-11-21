@@ -139,7 +139,7 @@ const sourceCount = computed(() => snapshot.value?.sources.length ?? 0)
       <article class="card c-4" aria-labelledby="sk-q">
         <div class="card-head"><h2 id="sk-q" class="q">Top skills · {{ ins.roleLabel.value }}</h2></div>
         <CardState :empty="!ins.skills.value.length">
-          <SkillBars :skills="ins.skills.value" :role-label="ins.roleLabel.value" compact />
+          <SkillBars :skills="ins.skills.value" :role-label="ins.roleLabel.value" :highlight="ins.risingSkill.value" compact />
         </CardState>
         <button type="button" class="btn btn-ghost link-btn" @click="go('skills')">All skills<Icon :path="ICON.arrow" small /></button>
       </article>

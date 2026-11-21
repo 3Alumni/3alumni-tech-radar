@@ -39,7 +39,7 @@ Load everything through one composable that validates the shape; on mismatch sho
 - One chart = one component (e.g. `DemandBarRace.vue`). Size from the container with `ResizeObserver`.
 - Bar race: `scaleBand` + `scaleLinear`, re-sort bars each month, keyed data join (`.data(d, d => d.role)`) + `transition()`; value labels tween with `interpolateNumber`.
 - Role switch: keyed joins with stable ids so bars and lines move instead of redrawing.
-- Canton map: `swiss-maps` TopoJSON → `topojson-client` `feature()` → `geoPath` + `geoIdentity().reflectY(false).fitSize()` (the data is already projected). Credit "BFS, GEOSTAT" (non-commercial licence).
+- Canton map: `swiss-maps@4.7.0` (`swiss-maps/2026/ch-combined.json`, lazy-loaded) → `topojson-client` `feature()` → `geoPath` + `geoMercator().fitSize()` (the file is WGS84 lon/lat, not pre-projected). Credit "BFS, GEOSTAT" (non-commercial licence). Component: `components/charts/CantonMap.vue`.
 - Skill trend: bump chart = `line()` + `curveBumpX`, y axis = rank (1 at top).
 - Matrix: scatter with `scaleLinear` on both axes + four quadrant `<rect>`s behind the dots.
 - Colours from tokens via CSS (`fill: var(--color-action)`), never hex in JS. Labels ≥ 14 px.
