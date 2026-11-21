@@ -130,6 +130,11 @@ function updated(source: ApiSource) {
 .src-tbl td:first-child { overflow-wrap: anywhere; }
 .src-tbl .ext { display: inline-flex; align-items: center; gap: 6px; }
 @media (max-width: 639px) {
+  .src-tbl { table-layout: auto; width: 100%; max-width: 100%; }
+  .src-tbl .c-name,
+  .src-tbl .c-used,
+  .src-tbl .c-date { width: auto; }
   .src-tbl .center { text-align: left; }
+  .src-tbl td:first-child { overflow-wrap: break-word; }
 }
 </style>

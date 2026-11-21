@@ -176,9 +176,14 @@ function tagClass(tag: string) {
 .tbl .tag { align-self: center; }
 .tbl .ext { display: inline-flex; align-items: center; min-height: 28px; vertical-align: middle; }
 @media (max-width: 639px) {
+  .emp-tbl { table-layout: auto; width: 100%; }
+  .emp-tbl .c-num,
+  .emp-tbl .c-tags,
+  .emp-tbl .c-link { width: auto; }
   .tbl.cardify td { align-items: center; }
   /* Stacked cards: label left, value left — centring only makes sense in columns */
   .emp-tbl td:not(:first-child) { text-align: left; }
   .emp-tbl .tags { justify-content: flex-start; }
+  .emp-tbl td:first-child { overflow-wrap: break-word; }
 }
 </style>
