@@ -102,7 +102,6 @@ a:hover { color: var(--color-action-strong); text-decoration-thickness: 2px; }
 .tag-partner { background: var(--color-action-subtle); border-color: var(--color-action); color: var(--color-action-strong); }
 .tag-agency { background: var(--color-bg); border-color: var(--color-border-strong); color: var(--color-text-muted); }
 .tag-new { background: var(--color-action); border-color: var(--color-action); color: var(--color-on-action); }
-.tag-sample { background: var(--color-surface); border-color: var(--color-border-strong); color: var(--color-text-muted); cursor: help; }
 .imp-high { background: var(--color-action-subtle); border-color: var(--color-action-strong); color: var(--color-action-strong); }
 .imp-medium { background: var(--color-warning-subtle); border-color: var(--color-warning); color: var(--color-warning); }
 .imp-low { background: var(--color-bg); border-color: var(--color-border-strong); color: var(--color-text-muted); }

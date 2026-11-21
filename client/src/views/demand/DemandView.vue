@@ -51,7 +51,7 @@ const trendPoints = computed(() => {
   const days = [...past.map((day) => ({ ...day, live: false })), { date: today, openings: current.value.openings, live: true }]
   return days.map((day) => ({
     key: day.date,
-    label: day.live ? fmtDate(day.date) : `${fmtDate(day.date)}, sample`,
+    label: fmtDate(day.date),
     short: fmtDate(day.date).replace(/ \d{4}$/, ''),
     value: day.openings,
   }))
@@ -61,7 +61,7 @@ const trendSummary = computed(() => {
   const first = points[0]
   const last = points[points.length - 1]
   if (!first || !last || !current.value) return ''
-  return `${current.value.query}, one point per day: ${fmtNum(first.value)} sample ads on ${first.label}, ${fmtNum(last.value)} Adzuna ads on ${last.label}`
+  return `${current.value.query}, one point per day: ${fmtNum(first.value)} ads on ${first.label}, ${fmtNum(last.value)} ads on ${last.label}`
 })
 
 function toggleRegion(canton: string) {
@@ -123,7 +123,6 @@ function openSalary() {
             <Icon :path="weekDeltaPct >= 0 ? ICON.up : ICON.down" small />
             {{ fmtPct(weekDeltaPct, true) }} vs {{ fmtDate(DEMAND_WEEK_AGO.asOf) }}
           </span>
-          <span class="tag tag-sample">Sample</span>
         </p>
         <p v-if="!current" class="muted"><b>No job ads yet</b> for this role and language.</p>
         <button type="button" class="btn btn-ghost sal-link" :disabled="!salaryTrend" @click="openSalary">
@@ -141,7 +140,7 @@ function openSalary() {
           </p>
         </div>
         <template v-if="cantons.length">
-          <CantonMap :cantons="shownCantons" :selected="region" @pick="toggleRegion" />
+          <CantonMap :cantons="shownCantons" :selected="region" />
           <CantonBars :cantons="shownCantons" :selected="region" @pick="toggleRegion" />
         </template>
         <p v-else class="muted"><b>No canton</b> on the saved ads for this search.</p>
@@ -151,7 +150,7 @@ function openSalary() {
 </template>
 
 <style scoped>
-.filters { display: flex; align-items: flex-end; gap: var(--space-3); flex-wrap: wrap; }
+.filters { display: flex; align-items: flex-end; gap: var(--space-3) var(--space-6); flex-wrap: wrap; }
 .sal-link { align-self: flex-start; margin-left: -12px; }
 .week { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: 0; }
 </style>

@@ -8,7 +8,7 @@ import { useSalaryDialog } from '@/composables/useSalaryDialog'
 import { useActiveIndex } from '@/composables/useActiveIndex'
 
 /** Average advertised salary per role, last 12 months. Native <dialog>: focus trap + Esc for free. */
-const { roles, isSample } = useSnapshot()
+const { roles } = useSnapshot()
 const { roleId, chart, open, close } = useSalaryDialog()
 const dlg = ref<HTMLDialogElement | null>(null)
 const closeBtn = ref<HTMLButtonElement | null>(null)
@@ -101,7 +101,7 @@ function onBackdrop(e: MouseEvent) {
         </p>
       </div>
       <p class="small muted">
-        {{ note }} · k = CHF thousand<template v-if="isSample && !chart"> · Sample data</template>
+        {{ note }} · k = CHF thousand
       </p>
     </div>
   </dialog>

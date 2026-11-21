@@ -12,11 +12,10 @@ import type { CantonCount } from '@/lib/types'
 /**
  * Choropleth of job ads per canton. swiss-maps TopoJSON (WGS84) → topojson-client feature()
  * → d3 geoMercator().fitSize() + geoPath(). Vue renders every <path>; D3 only does the maths.
- * Cantons with data are buttons (click / Enter / Space filters the page); the rest are context.
+ * Hover-only: tooltip + highlight; filtering happens in the bars and the Region select.
  * Map: BFS, GEOSTAT (non-commercial licence).
  */
 const props = defineProps<{ cantons: CantonCount[]; selected: string }>()
-const emit = defineEmits<{ pick: [canton: string] }>()
 
 type Geo = Feature<Geometry, { id?: number }>
 const shapes = shallowRef<{ cantons: Geo[]; lakes: Geo[]; outline: FeatureCollection } | null>(null)
@@ -65,13 +64,26 @@ const byId = computed(() => {
 const unmatched = computed(() => props.cantons.filter((c) => !cantonId(c.canton)).map((c) => c.canton))
 
 // Sequential greys in 4 equal steps from 0 to the top canton (classes map to CSS tokens).
-const scale = computed(() => scaleQuantize<number>().domain([0, max(props.cantons, (c) => c.count) || 1]).range([1, 2, 3, 4]))
-const legend = computed(() =>
-  scale.value.range().map((lvl) => {
-    const [a = 0, b = 0] = scale.value.invertExtent(lvl)
+const top = computed(() => max(props.cantons, (c) => c.count) || 1)
+// Small counts (≤ 4): one step per count, legend shows plain numbers. Larger: 4 equal ranges.
+const small = computed(() => top.value <= 4)
+const scale = computed(() => {
+  if (small.value) {
+    const offset = 4 - top.value // darkest step = top count
+    return (v: number) => Math.min(4, Math.max(1, Math.round(v) + offset))
+  }
+  const q = scaleQuantize<number>().domain([0, top.value]).range([1, 2, 3, 4])
+  return (v: number) => q(v)
+})
+const legend = computed(() => {
+  if (small.value)
+    return Array.from({ length: top.value }, (_, i) => i + 1).map((n) => ({ lvl: scale.value(n), label: fmtNum(n) }))
+  const q = scaleQuantize<number>().domain([0, top.value]).range([1, 2, 3, 4])
+  return q.range().map((lvl) => {
+    const [a = 0, b = 0] = q.invertExtent(lvl)
     return { lvl, label: `${fmtNum(Math.round(a))}–${fmtNum(Math.round(b))}` }
-  }),
-)
+  })
+})
 
 const cantonPaths = computed(() => {
   const p = path.value
@@ -84,16 +96,20 @@ const cantonPaths = computed(() => {
     return {
       id, name, data, d: p(f) ?? '', cx, cy,
       lvl: data ? scale.value(data.count) : 0,
-      on: !!data && data.canton === props.selected,
     }
   })
 })
 const lakePaths = computed(() => (path.value && shapes.value ? shapes.value.lakes.map((f, i) => ({ k: i, d: path.value!(f) ?? '' })) : []))
 
-// Direct label: the selected canton, else the top one. Never a number on every canton.
+// Direct label (name + number): the canton picked in the Region filter, else the top one.
 const labelled = computed(() => {
   const list = cantonPaths.value.filter((c) => c.data)
-  return list.find((c) => c.on) ?? [...list].sort((a, b) => (b.data!.count - a.data!.count))[0] ?? null
+  return list.find((c) => c.data!.canton === props.selected) ?? [...list].sort((a, b) => b.data!.count - a.data!.count)[0] ?? null
+})
+// Text alternative: the map is hover-only, so screen readers get every count here.
+const summary = computed(() => {
+  const list = [...props.cantons].sort((a, b) => b.count - a.count)
+  return 'Map of Switzerland, job ads by canton: ' + list.map((c) => `${c.canton} ${fmtNum(c.count)}`).join(', ')
 })
 
 const hoverId = ref<number | null>(null)
@@ -106,9 +122,6 @@ const numberLabels = computed(() =>
 const showLabel = computed(() => labelled.value && labelled.value.id !== hoverId.value)
 const labelEnd = computed(() => !!labelled.value && labelled.value.cx > width.value * 0.7)
 
-function pick(c: { data?: CantonCount }) {
-  if (c.data) emit('pick', c.data.canton)
-}
 </script>
 
 <template>
@@ -121,26 +134,17 @@ function pick(c: { data?: CantonCount }) {
         :viewBox="`0 0 ${width} ${height}`"
         :width="width"
         :height="height"
-        role="group"
-        aria-label="Map of Switzerland: job ads by canton. Cantons with job ads are buttons that filter the page."
+        role="img"
+        :aria-label="summary"
       >
         <g class="cantons">
           <path
             v-for="c in cantonPaths"
             :key="c.id"
             :d="c.d"
-            :class="['canton', c.data ? 'lvl-' + c.lvl : 'no-data', { on: c.on, hot: hoverId === c.id }]"
-            :role="c.data ? 'button' : undefined"
-            :tabindex="c.data ? 0 : undefined"
-            :aria-pressed="c.data ? c.on : undefined"
-            :aria-label="c.data ? `${c.name}: ${fmtNum(c.data.count)} job ads. ${c.on ? 'Selected. Press to show all of Switzerland' : 'Press to show only ' + c.name}` : undefined"
-            :aria-hidden="c.data ? undefined : 'true'"
+            :class="['canton', c.data ? 'lvl-' + c.lvl : 'no-data', { hot: hoverId === c.id }]"
+            aria-hidden="true"
             @mouseenter="hoverId = c.id"
-            @focus="hoverId = c.id"
-            @blur="hoverId = null"
-            @click="pick(c)"
-            @keydown.enter.prevent="pick(c)"
-            @keydown.space.prevent="pick(c)"
           />
         </g>
         <g class="lakes" aria-hidden="true">
@@ -153,7 +157,7 @@ function pick(c: { data?: CantonCount }) {
             :x="c.cx"
             :y="c.cy + 5"
             text-anchor="middle"
-            :class="['num-label', { dark: c.lvl >= 3 && !c.on }]"
+            class="num-label"
           >{{ fmtNum(c.data!.count) }}</text>
         </g>
         <g v-if="labelled && showLabel" class="label" aria-hidden="true" :transform="`translate(${labelled.cx},${labelled.cy})`">
@@ -177,7 +181,6 @@ function pick(c: { data?: CantonCount }) {
       <ul class="legend" aria-label="Job ads per canton">
         <li v-for="l in legend" :key="l.lvl"><span :class="['sw', 'lvl-' + l.lvl]" aria-hidden="true" />{{ l.label }}</li>
         <li><span class="sw no-data" aria-hidden="true" />No data</li>
-        <li><span class="sw on" aria-hidden="true" />Selected</li>
       </ul>
       <span class="small muted">Map: BFS, GEOSTAT</span>
     </figcaption>
@@ -196,14 +199,12 @@ function pick(c: { data?: CantonCount }) {
   transition: fill .4s var(--ease-out), opacity .15s;
 }
 .no-data { fill: var(--color-bg); stroke: var(--color-border); }
-.lvl-1 { fill: var(--color-seq-1); }
-.lvl-2 { fill: var(--color-seq-2); }
-.lvl-3 { fill: var(--color-seq-3); }
-.lvl-4 { fill: var(--color-seq-4); }
-.canton.on { fill: var(--color-action); }
-.canton[role="button"] { cursor: pointer; }
+.lvl-1 { fill: var(--color-red-1); }
+.lvl-2 { fill: var(--color-red-2); }
+.lvl-3 { fill: var(--color-red-3); }
+.lvl-4 { fill: var(--color-red-4); }
 /* Hover/focus: dim the rest, ink outline on the one under the pointer (drawn above its neighbours). */
-.cantons:hover .canton[role="button"]:not(.hot) { opacity: .55; }
+.cantons:hover .canton:not(.hot):not(.no-data) { opacity: .55; }
 .canton.hot { stroke: var(--color-text); stroke-width: 2.5; paint-order: stroke; }
 .canton:focus { outline: none; }
 .canton:focus-visible { stroke: var(--color-text); stroke-width: 3; }
@@ -240,10 +241,9 @@ function pick(c: { data?: CantonCount }) {
 .legend { display: flex; flex-wrap: wrap; gap: var(--space-1) 12px; font-size: 14px; line-height: 20px; color: var(--color-text-muted); }
 .legend li { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
 .sw { width: 14px; height: 14px; flex: none; }
-.sw.lvl-1 { background: var(--color-seq-1); }
-.sw.lvl-2 { background: var(--color-seq-2); }
-.sw.lvl-3 { background: var(--color-seq-3); }
-.sw.lvl-4 { background: var(--color-seq-4); }
+.sw.lvl-1 { background: var(--color-red-1); }
+.sw.lvl-2 { background: var(--color-red-2); }
+.sw.lvl-3 { background: var(--color-red-3); }
+.sw.lvl-4 { background: var(--color-red-4); }
 .sw.no-data { background: var(--color-bg); box-shadow: inset 0 0 0 1px var(--color-border); }
-.sw.on { background: var(--color-action); }
 </style>

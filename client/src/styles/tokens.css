@@ -18,6 +18,11 @@
   --color-seq-2: #A8A9A7;
   --color-seq-3: #767775;
   --color-seq-4: #343534;
+  /* Sequential reds for the canton map: light → brand red → strong */
+  --color-red-1: #F3D9DE;
+  --color-red-2: #E0A1AD;
+  --color-red-3: #B23149;
+  --color-red-4: #8E2639;
   /* Status — always with icon + text */
   --color-success: #1F6B3E;  --color-success-subtle: #EAF3ED;   /* fresh data */
   --color-warning: #7A4F00;  --color-warning-subtle: #FBF3E2;   /* outdated data */

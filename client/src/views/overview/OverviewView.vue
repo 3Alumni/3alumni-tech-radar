@@ -27,7 +27,6 @@ const { go } = useView()
 const salary = useSalaryDialog()
 
 const current = computed(() => queries.value.find((row) => row.role === role.value && row.lang === lang.value) ?? null)
-const roleLabel = computed(() => ROLES.find((item) => item.id === role.value)?.label ?? '')
 const openings = computed(() => current.value?.openings ?? 0)
 const kpiShown = useCountUp(openings)
 const prior = computed(() => weekAgoOpenings(role.value, lang.value))
@@ -48,11 +47,6 @@ const ranking = computed(() =>
   })).sort((a, b) => b.openings - a.openings || a.label.localeCompare(b.label)),
 )
 const rankMax = computed(() => Math.max(...ranking.value.map((row) => row.openings), 1))
-const rankAnswer = computed(() => {
-  const top = ranking.value[0]
-  if (!top?.openings) return ''
-  return `${top.label} has the most open ads in this language: ${fmtNum(top.openings)}.`
-})
 const employerTop = computed(() => {
   const payload = employers.data.value
   if (!payload) return []
@@ -108,25 +102,22 @@ function openSalary() {
 
     <div v-else class="tiles">
       <button type="button" class="tile" @click="go('demand')">
-        <span class="small muted">Open job ads · {{ roleLabel }}</span>
+        <span class="small muted">Open job ads</span>
         <span class="tile-v">{{ fmtNum(kpiShown) }}</span>
         <span v-if="weekDeltaPct != null" :class="weekDeltaPct >= 0 ? 'up' : 'down'">
           <Icon :path="weekDeltaPct >= 0 ? ICON.up : ICON.down" small />
           {{ fmtPct(weekDeltaPct, true) }} vs {{ fmtDate(DEMAND_WEEK_AGO.asOf) }}
-          <span class="tag tag-sample">Sample</span>
         </span>
         <span class="tile-more">Demand<Icon :path="ICON.arrow" small /></span>
       </button>
       <button type="button" class="tile" @click="go('demand')">
         <span class="small muted">Most saved ads in</span>
         <span class="tile-v">{{ topCanton?.name ?? '—' }}</span>
-        <span class="small muted">{{ topCanton ? fmtNum(topCanton.count) + ' of the saved ads' : 'No canton on the saved ads' }}</span>
         <span class="tile-more">Demand<Icon :path="ICON.arrow" small /></span>
       </button>
       <button type="button" class="tile" @click="go('skills')">
         <span class="small muted">Top ESCO skill</span>
         <span class="tile-v">{{ topSkill || 'None' }}</span>
-        <span class="small muted">for {{ roleLabel }}</span>
         <span class="tile-more">Skills<Icon :path="ICON.arrow" small /></span>
       </button>
     </div>
@@ -135,7 +126,6 @@ function openSalary() {
       <article class="card c-6" aria-labelledby="race-q">
         <div class="card-head">
           <h2 id="race-q" class="q">Which role has the most job ads?</h2>
-          <p>{{ rankAnswer }}</p>
         </div>
         <div class="rank" role="list">
           <button v-for="item in ranking" :key="item.id" type="button" class="rank-row" @click="role = item.id; openSalary()">
@@ -146,15 +136,15 @@ function openSalary() {
             </span>
           </button>
         </div>
-        <p class="small muted">Adzuna count for this language. Click a role to see the IT salary trend.</p>
+        <p class="small muted">Click a role to see the IT salary trend.</p>
       </article>
 
       <article class="card c-6" aria-labelledby="emp-q">
-        <div class="card-head"><h2 id="emp-q" class="q">Top employers · {{ roleLabel }}</h2></div>
+        <div class="card-head"><h2 id="emp-q" class="q">Top employers</h2></div>
         <p v-if="!employerTop.length" class="muted"><b>No companies</b> in the saved ads for this role.</p>
         <ul v-else class="mini-list">
           <li v-for="e in employerTop" :key="e.name" class="mini-row">
-            <span><b>{{ e.name }}</b><br /><span class="small muted">{{ fmtNum(e.jobs) }} saved ads</span></span>
+            <span><b>{{ e.name }}</b></span>
           </li>
         </ul>
         <button type="button" class="btn btn-ghost link-btn" @click="go('employers')">All employers<Icon :path="ICON.arrow" small /></button>
@@ -177,7 +167,7 @@ function openSalary() {
 </template>
 
 <style scoped>
-.filters { display: flex; align-items: flex-end; gap: var(--space-3); flex-wrap: wrap; }
+.filters { display: flex; align-items: flex-end; gap: var(--space-3) var(--space-6); flex-wrap: wrap; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-3); }
 .tile {
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); padding: 20px;
