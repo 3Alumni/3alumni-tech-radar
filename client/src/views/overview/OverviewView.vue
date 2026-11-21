@@ -1,26 +1,91 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
-import DataAlerts from '@/components/ui/DataAlerts.vue'
-import CardState from '@/components/ui/CardState.vue'
-import RoleRegionFilters from '@/components/ui/RoleRegionFilters.vue'
-import RoleRaceChart from '@/components/charts/RoleRaceChart.vue'
-import { ICON, fmtDate, fmtNum } from '@/lib/format'
-import { useSnapshot } from '@/composables/useSnapshot'
-import { useInsights } from '@/composables/useInsights'
+import { ICON, fmtDate, fmtNum, fmtPct } from '@/lib/format'
+import { cantonMapName, useDemand } from '@/composables/useDemand'
+import { useSkills } from '@/composables/useSkills'
+import { useEmployers } from '@/composables/useEmployers'
+import { DEMAND_WEEK_AGO, weekAgoOpenings } from '@/data/demandWeekAgo.sample'
 import { useView } from '@/composables/useView'
 import { useSalaryDialog } from '@/composables/useSalaryDialog'
 import { useCountUp } from '@/composables/useMotion'
 
-const { roles, canShow } = useSnapshot()
-const ins = useInsights()
+const ROLES = [
+  { id: 'web-developer', label: 'Web developer' },
+  { id: 'it-support', label: 'IT support' },
+  { id: 'data-analyst', label: 'Data analyst' },
+]
+
+const role = ref(ROLES[0]!.id)
+const lang = ref<'en' | 'de'>('en')
+const { status, errorMessage, queries, salaryTrend } = useDemand()
+const skills = useSkills()
+const employers = useEmployers()
 const { go } = useView()
 const salary = useSalaryDialog()
 
-const kpiShown = useCountUp(ins.kpiValue)
+const current = computed(() => queries.value.find((row) => row.role === role.value && row.lang === lang.value) ?? null)
+const roleLabel = computed(() => ROLES.find((item) => item.id === role.value)?.label ?? '')
+const openings = computed(() => current.value?.openings ?? 0)
+const kpiShown = useCountUp(openings)
+const prior = computed(() => weekAgoOpenings(role.value, lang.value))
+const weekDeltaPct = computed(() => {
+  const then = prior.value
+  if (!current.value || then == null || then === 0) return null
+  return Math.round((current.value.openings / then - 1) * 100)
+})
+const topCanton = computed(() => {
+  const row = [...(current.value?.cantons ?? [])].sort((a, b) => b.postings - a.postings)[0]
+  return row ? { name: cantonMapName(row.canton), count: row.postings } : null
+})
+const topSkill = computed(() => skills.byRole.value[role.value]?.esco[0]?.label ?? '')
+const ranking = computed(() =>
+  ROLES.map((item) => ({
+    ...item,
+    openings: queries.value.find((row) => row.role === item.id && row.lang === lang.value)?.openings ?? 0,
+  })).sort((a, b) => b.openings - a.openings || a.label.localeCompare(b.label)),
+)
+const rankMax = computed(() => Math.max(...ranking.value.map((row) => row.openings), 1))
+const rankAnswer = computed(() => {
+  const top = ranking.value[0]
+  if (!top?.openings) return ''
+  return `${top.label} has the most open ads in this language: ${fmtNum(top.openings)}.`
+})
+const employerTop = computed(() => {
+  const payload = employers.data.value
+  if (!payload) return []
+  return payload.outreach
+    .map((group) => ({ name: group.company, jobs: group.roles[role.value] ?? 0 }))
+    .filter((row) => row.jobs > 0)
+    .sort((a, b) => b.jobs - a.jobs || a.name.localeCompare(b.name))
+    .slice(0, 4)
+})
 
-const policyTop = computed(() => ins.policySorted.value.slice(0, 3))
-const empTop = computed(() => ins.employersAll.value.slice(0, 4))
+const policy = ref<{ label: string; date: string }[]>([])
+onMounted(async () => {
+  try {
+    const res = await fetch('/api/policy')
+    if (!res.ok) return
+    const rows = (await res.json()) as { label?: string; fetchedAt?: string; fetched_at?: string }[]
+    if (!Array.isArray(rows)) return
+    policy.value = rows.slice(0, 3).flatMap((row) => {
+      const date = row.fetchedAt ?? row.fetched_at
+      return row.label && date ? [{ label: row.label, date: date.slice(0, 10) }] : []
+    })
+  } catch {
+    policy.value = []
+  }
+})
+
+function openSalary() {
+  const trend = salaryTrend.value
+  if (!trend) return
+  salary.openChart({
+    title: 'IT Jobs',
+    note: 'Average advertised salary for all IT job ads in Switzerland, not only this role. Source: Adzuna.',
+    points: trend.months.map((month) => ({ month: month.month, chf: month.salary })),
+  })
+}
 </script>
 
 <template>
@@ -32,78 +97,98 @@ const empTop = computed(() => ins.employersAll.value.slice(0, 4))
       </div>
     </div>
 
-    <RoleRegionFilters />
-    <DataAlerts />
+    <div class="filters">
+      <div class="field seg-field">
+        <span id="ov-role-l" class="label">Role</span>
+        <div class="seg" role="group" aria-labelledby="ov-role-l">
+          <button v-for="item in ROLES" :key="item.id" type="button" :aria-pressed="item.id === role" @click="role = item.id">
+            {{ item.label }}
+          </button>
+        </div>
+      </div>
+      <div class="field seg-field">
+        <span id="ov-lang-l" class="label">Language of the ad</span>
+        <div class="seg" role="group" aria-labelledby="ov-lang-l">
+          <button type="button" :aria-pressed="lang === 'en'" @click="lang = 'en'">English</button>
+          <button type="button" :aria-pressed="lang === 'de'" @click="lang = 'de'">German</button>
+        </div>
+      </div>
+    </div>
 
-    <div v-if="canShow" class="tiles">
+    <p v-if="status === 'loading'" class="muted">Loading Adzuna…</p>
+    <p v-else-if="status === 'error'" class="muted">Could not load overview. {{ errorMessage }}</p>
+
+    <div v-else class="tiles">
       <button type="button" class="tile" @click="go('demand')">
-        <span class="small muted">Open job ads · {{ ins.roleLabel.value }}</span>
+        <span class="small muted">Open job ads · {{ roleLabel }}</span>
         <span class="tile-v">{{ fmtNum(kpiShown) }}</span>
-        <span :class="ins.changeUp.value ? 'up' : 'down'"><Icon :path="ins.changeUp.value ? ICON.up : ICON.down" small />{{ ins.changeText.value }}</span>
+        <span v-if="weekDeltaPct != null" :class="weekDeltaPct >= 0 ? 'up' : 'down'">
+          <Icon :path="weekDeltaPct >= 0 ? ICON.up : ICON.down" small />
+          {{ fmtPct(weekDeltaPct, true) }} vs {{ fmtDate(DEMAND_WEEK_AGO.asOf) }}
+          <span class="tag tag-sample">Sample</span>
+        </span>
         <span class="tile-more">Demand<Icon :path="ICON.arrow" small /></span>
       </button>
       <button type="button" class="tile" @click="go('demand')">
-        <span class="small muted">Most job ads in</span>
-        <span class="tile-v">{{ ins.topCanton.value }}</span>
-        <span class="small muted">for {{ ins.roleLabel.value }}</span>
+        <span class="small muted">Most saved ads in</span>
+        <span class="tile-v">{{ topCanton?.name ?? '—' }}</span>
+        <span class="small muted">{{ topCanton ? fmtNum(topCanton.count) + ' of the saved ads' : 'No canton on the saved ads' }}</span>
         <span class="tile-more">Demand<Icon :path="ICON.arrow" small /></span>
       </button>
       <button type="button" class="tile" @click="go('skills')">
-        <span class="small muted">Rising skill</span>
-        <span class="tile-v">{{ ins.risingSkill.value }}</span>
-        <span class="small muted">for {{ ins.roleLabel.value }}</span>
+        <span class="small muted">Top ESCO skill</span>
+        <span class="tile-v">{{ topSkill || 'None' }}</span>
+        <span class="small muted">for {{ roleLabel }}</span>
         <span class="tile-more">Skills<Icon :path="ICON.arrow" small /></span>
       </button>
     </div>
 
-    <div class="grid">
+    <div v-if="status === 'ready'" class="grid">
       <article class="card c-6" aria-labelledby="race-q">
         <div class="card-head">
           <h2 id="race-q" class="q">Which role has the most job ads?</h2>
-          <p v-if="canShow">{{ ins.raceAnswer.value }}</p>
+          <p>{{ rankAnswer }}</p>
         </div>
-        <CardState :lines="[90, 70, 50]" :line-height="32">
-          <template #empty><b>No job ads yet.</b> Check again after the next data update.</template>
-          <RoleRaceChart :roles="roles" :selected-id="ins.currentRole.value?.id ?? ''" @open="salary.open" />
-        </CardState>
+        <div class="rank" role="list">
+          <button v-for="item in ranking" :key="item.id" type="button" class="rank-row" @click="role = item.id; openSalary()">
+            <span class="rank-name">{{ item.label }}</span>
+            <span class="rank-track">
+              <span :class="['rank-fill', { sel: item.id === role }]" :style="{ width: (item.openings / rankMax) * 100 + '%' }" />
+              <span class="num">{{ fmtNum(item.openings) }}</span>
+            </span>
+          </button>
+        </div>
+        <p class="small muted">Adzuna count for this language. Click a role to see the IT salary trend.</p>
       </article>
 
       <article class="card c-6" aria-labelledby="emp-q">
-        <div class="card-head"><h2 id="emp-q" class="q">Top employers · {{ ins.roleLabel.value }}</h2></div>
-        <CardState :empty="!empTop.length">
-          <template #empty><b>No companies match.</b> Try another region.</template>
-          <ul class="mini-list">
-            <li v-for="e in empTop" :key="e.name" class="mini-row">
-              <span><b>{{ e.name }}</b><br /><span class="small muted">{{ e.canton }} · {{ fmtNum(e.jobs) }} open jobs</span></span>
-              <span class="tags">
-                <span v-if="e.junior" class="tag tag-junior">Junior-friendly</span>
-                <span v-if="e.partner" class="tag tag-partner">Partner</span>
-              </span>
-            </li>
-          </ul>
-        </CardState>
+        <div class="card-head"><h2 id="emp-q" class="q">Top employers · {{ roleLabel }}</h2></div>
+        <p v-if="!employerTop.length" class="muted"><b>No companies</b> in the saved ads for this role.</p>
+        <ul v-else class="mini-list">
+          <li v-for="e in employerTop" :key="e.name" class="mini-row">
+            <span><b>{{ e.name }}</b><br /><span class="small muted">{{ fmtNum(e.jobs) }} saved ads</span></span>
+          </li>
+        </ul>
         <button type="button" class="btn btn-ghost link-btn" @click="go('employers')">All employers<Icon :path="ICON.arrow" small /></button>
       </article>
 
       <article class="card c-12" aria-labelledby="newpol-q">
         <div class="card-head"><h2 id="newpol-q" class="q">Newest policy items</h2></div>
-        <CardState :empty="!policyTop.length">
-          <template #empty><b>No policy items yet.</b></template>
-          <ul class="mini-list pol-list">
-            <li v-for="p in policyTop" :key="p.id">
-              <span class="small muted">{{ fmtDate(p.publishedDate) }}</span>
-              <b>{{ p.title }}</b>
-            </li>
-          </ul>
-        </CardState>
+        <p v-if="!policy.length" class="muted"><b>No policy items yet.</b></p>
+        <ul v-else class="mini-list pol-list">
+          <li v-for="p in policy" :key="p.label">
+            <span class="small muted">{{ fmtDate(p.date) }}</span>
+            <b>{{ p.label }}</b>
+          </li>
+        </ul>
         <button type="button" class="btn btn-ghost link-btn" @click="go('policy')">All policy items<Icon :path="ICON.arrow" small /></button>
       </article>
-
     </div>
   </section>
 </template>
 
 <style scoped>
+.filters { display: flex; align-items: flex-end; gap: var(--space-3); flex-wrap: wrap; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-3); }
 .tile {
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); padding: 20px;
@@ -114,10 +199,20 @@ const empTop = computed(() => ins.employersAll.value.slice(0, 4))
 .tile-v { font-size: 28px; line-height: 36px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .tile-more { margin-top: auto; padding-top: 12px; display: inline-flex; align-items: center; gap: var(--space-1); font-size: 14px; font-weight: 600; color: var(--color-action); }
 .tile:hover .tile-more { text-decoration: underline; text-underline-offset: 3px; }
+.up, .down { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.rank { display: flex; flex-direction: column; gap: 8px; }
+.rank-row {
+  display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px; align-items: center;
+  width: 100%; padding: 2px 0; color: var(--color-text); text-align: left; background: transparent; border: 0; cursor: pointer;
+}
+.rank-name { font-weight: 600; }
+.rank-row:hover .rank-name { color: var(--color-action); }
+.rank-track { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
+.rank-fill { display: block; height: 24px; background: var(--color-text-muted); }
+.rank-fill.sel { background: var(--color-action); }
 .mini-list { display: flex; flex-direction: column; }
 .mini-list li { display: flex; flex-direction: column; gap: var(--space-1); padding: 12px 0; border-top: var(--border) solid var(--color-border); }
 .mini-list li:first-child { border-top: 0; padding-top: 0; }
-/* Policy: three newest items side by side on wide screens */
 .pol-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
 .pol-list li, .pol-list li:first-child { border-top: 0; padding: 0 0 0 var(--space-3); border-left: var(--border) solid var(--color-border); }
 .mini-list .mini-row { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
@@ -129,5 +224,6 @@ const empTop = computed(() => ins.employersAll.value.slice(0, 4))
 @media (max-width: 639px) {
   .tile { padding: var(--space-3); }
   .tile-v { font-size: 22px; line-height: 28px; }
+  .rank-row { grid-template-columns: 96px minmax(0, 1fr); }
 }
 </style>
