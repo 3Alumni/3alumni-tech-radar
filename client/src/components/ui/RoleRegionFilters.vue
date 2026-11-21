@@ -4,14 +4,14 @@ import { ICON } from '@/lib/format'
 import { useFilters } from '@/composables/useFilters'
 import { useSnapshot } from '@/composables/useSnapshot'
 
-withDefaults(defineProps<{ showRegion?: boolean }>(), { showRegion: true })
+withDefaults(defineProps<{ showRegion?: boolean; showRole?: boolean }>(), { showRegion: true, showRole: true })
 const { roles } = useSnapshot()
 const { role, region, regions, setRole, setRegion } = useFilters()
 </script>
 
 <template>
   <div class="filters">
-    <div class="field seg-field">
+    <div v-if="showRole" class="field seg-field">
       <span id="role-l" class="label">Role</span>
       <div class="seg" role="group" aria-labelledby="role-l">
         <button
@@ -23,7 +23,7 @@ const { role, region, regions, setRole, setRegion } = useFilters()
         >{{ r.label }}</button>
       </div>
     </div>
-    <div class="field role-sel">
+    <div v-if="showRole" class="field role-sel">
       <label class="label" for="role-s">Role</label>
       <div class="sel">
         <select id="role-s" class="input" :value="role" @change="setRole(($event.target as HTMLSelectElement).value)">
