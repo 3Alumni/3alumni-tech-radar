@@ -74,7 +74,7 @@ function openSalary() {
   if (!trend) return
   salary.openChart({
     title: 'IT Jobs',
-    note: 'Average advertised salary for all IT jobs in Switzerland, not only this role. Source: Adzuna.',
+    note: 'Average advertised salary for all IT jobs in Switzerland, not only this role.',
     points: trend.months.map((month) => ({ month: month.month, chf: month.salary })),
   })
 }

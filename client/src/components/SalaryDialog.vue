@@ -119,9 +119,10 @@ function onBackdrop(e: MouseEvent) {
 .col { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; cursor: crosshair; transition: opacity .15s; }
 .cols:hover .col { opacity: .45; }
 .cols:hover .col:hover, .col.on { opacity: 1; }
-.col-bar { display: block; width: 100%; background: var(--color-text-muted); transition: height .4s var(--ease-out), background-color .15s; }
-.col:hover .col-bar:not(.sel), .col.on .col-bar:not(.sel) { background: var(--color-text); }
+.col-bar { display: block; width: 100%; background: var(--color-red-2); transition: height .4s var(--ease-out), background-color .15s; }
+.col:hover .col-bar:not(.sel), .col.on .col-bar:not(.sel) { background: var(--color-red-3); }
 .col-bar.sel { background: var(--color-action); }
+.col:hover .col-bar.sel, .col.on .col-bar.sel { background: var(--color-action-strong); }
 .col-val { font-size: 14px; line-height: 20px; font-weight: 600; text-align: center; white-space: nowrap; color: var(--color-text); font-variant-numeric: tabular-nums; margin-bottom: 4px; letter-spacing: -.02em; }
 .cols { padding-top: 24px; height: 204px; }
 .col .tip { bottom: auto; top: -8px; }
