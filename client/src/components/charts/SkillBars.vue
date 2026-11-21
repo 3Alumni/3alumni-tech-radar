@@ -3,7 +3,15 @@ import { computed } from 'vue'
 import { max, scaleLinear } from 'd3'
 import Icon from '@/components/ui/Icon.vue'
 import { ICON } from '@/lib/format'
-import type { Skill } from '@/lib/types'
+import type { Trend } from '@/lib/types'
+
+/** A bar needs a share. Trend is optional: the live skills page has only one reading. */
+export interface BarSkill {
+  name: string
+  sharePct: number
+  mentions?: number
+  trend?: Trend
+}
 
 /**
  * Inline bar list: monogram tile · skill · bar on a track · share + trend.
@@ -11,8 +19,8 @@ import type { Skill } from '@/lib/types'
  * `compact` = Overview widget.
  */
 const props = withDefaults(
-  defineProps<{ skills: Skill[]; roleLabel: string; highlight?: string; compact?: boolean }>(),
-  { highlight: '', compact: false },
+  defineProps<{ skills: BarSkill[]; roleLabel: string; ads?: number; highlight?: string; compact?: boolean }>(),
+  { highlight: '', compact: false, ads: 0 },
 )
 
 const TREND_WORD = { up: 'rising', down: 'falling', flat: 'steady' } as const
@@ -20,7 +28,7 @@ const x = computed(() => scaleLinear().domain([0, Math.max(55, max(props.skills,
 const aria = computed(
   () =>
     `Share of ${props.roleLabel} ads naming each skill: ` +
-    props.skills.map((s) => `${s.name} ${s.sharePct} percent, ${TREND_WORD[s.trend]}`).join('; ') +
+    props.skills.map((s) => `${s.name} ${s.sharePct} percent${s.trend ? ', ' + TREND_WORD[s.trend] : ''}`).join('; ') +
     (props.highlight ? `. Rising fastest: ${props.highlight}.` : ''),
 )
 
@@ -44,10 +52,14 @@ function monogram(name: string) {
       <span class="track">
         <span class="fill grow-x" :style="{ width: x(s.sharePct) + '%', '--i': i }" />
       </span>
-      <span :class="['val', 'num', 'tr-' + s.trend]">
-        {{ s.sharePct }}%<Icon v-if="!compact" :path="ICON[s.trend]" small />
+      <span :class="['val', 'num', s.trend ? 'tr-' + s.trend : '']">
+        {{ s.sharePct }}%<Icon v-if="!compact && s.trend" :path="ICON[s.trend]" small />
       </span>
-      <span class="tip tip-in">In {{ s.sharePct }}% of {{ roleLabel }} ads · {{ TREND_WORD[s.trend] }}{{ s.name === highlight ? ' · rising fastest' : '' }}</span>
+      <span class="tip tip-in">
+        <template v-if="s.mentions && ads">Named in {{ s.mentions }} of {{ ads }} saved ads</template>
+        <template v-else>In {{ s.sharePct }}% of {{ roleLabel }} ads</template>
+        <template v-if="s.trend"> · {{ TREND_WORD[s.trend] }}</template>{{ s.name === highlight ? ' · rising fastest' : '' }}
+      </span>
     </li>
   </ul>
 </template>
