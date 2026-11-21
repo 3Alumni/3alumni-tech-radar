@@ -12,4 +12,16 @@ export interface Metric {
   sourceId: string;
   sourceUrl: string;
   fetchedAt: string;
+  /** Official number, such as AS 2026 649 or BBl 2026 2961. */
+  reference?: string;
+  /** Kind of act, in the source language. */
+  kind?: string;
+  /** Office responsible for the act. */
+  authority?: string;
+  /** Date the act enters into force, when Fedlex publishes one. */
+  inForce?: string;
+  /** File that contains the act text. */
+  textUrl?: string;
+  /** Full plain text of the act. The original file stays at textUrl. */
+  text?: string;
 }

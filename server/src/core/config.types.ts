@@ -1,5 +1,14 @@
 import { Question } from "./metric";
 
+/** A published file the connector downloads on refresh. Nothing is written to disk. */
+export interface SourceFileConfig {
+  id: string;
+  format: "csv" | "xlsx";
+  period: string;
+  page: string;
+  url: string;
+}
+
 export interface SourceConfig {
   id: string;
   title: string;
@@ -7,6 +16,7 @@ export interface SourceConfig {
   type: string;
   url: string;
   enabled: boolean;
+  files?: SourceFileConfig[];
 }
 
 export interface RoleQuery {

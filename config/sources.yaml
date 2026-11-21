@@ -28,11 +28,52 @@ sources:
     questions: [D]
     type: file
     url: https://www.sem.admin.ch/de/asylstatistik
-    enabled: false
+    enabled: true
+    files:
+      - id: "2-24"
+        format: csv
+        period: "2025"
+        page: https://www.sem.admin.ch/de/auslaenderstatistik-dezember-2025
+        url: https://www.sem.admin.ch/dam/de/sd-web/pd1azPCKxvHw/2-24-best-tot-2025.csv
+      - id: "2-30"
+        format: csv
+        period: "2025"
+        page: https://www.sem.admin.ch/de/auslaenderstatistik-dezember-2025
+        url: https://www.sem.admin.ch/dam/de/sd-web/eCV8ik0ftVac/2-30-best-flu-2025.csv
+      - id: "2-50"
+        format: csv
+        period: "2025"
+        page: https://www.sem.admin.ch/de/auslaenderstatistik-dezember-2025
+        url: https://www.sem.admin.ch/dam/de/sd-web/VDlGGEPK8TyV/2-50-best-nstae-erw-2025.csv
+      - id: "3-42"
+        format: csv
+        period: "2025"
+        page: https://www.sem.admin.ch/de/auslaenderstatistik-dezember-2025
+        url: https://www.sem.admin.ch/dam/de/sd-web/1zdRnVf0FO1B/3-42-bew-erw-j-2025.csv
+      - id: "6-20"
+        format: xlsx
+        period: "2026-10"
+        page: https://www.sem.admin.ch/de/asylstatistik-oktober-2026
+        url: https://www.sem.admin.ch/dam/de/sd-web/3XIaAvWOLLco/6-20-best-asylprozess-erwerb-2026-10-d.xlsx
+      - id: "6-21"
+        format: xlsx
+        period: "2026-10"
+        page: https://www.sem.admin.ch/de/asylstatistik-oktober-2026
+        url: https://www.sem.admin.ch/dam/de/sd-web/-BW5KBaiHwP4/6-21-best-n-erwerb-2026-10-d.xlsx
+      - id: "6-22"
+        format: xlsx
+        period: "2026-10"
+        page: https://www.sem.admin.ch/de/asylstatistik-oktober-2026
+        url: https://www.sem.admin.ch/dam/de/sd-web/G6DODwDVvanJ/6-22-best-va-erwerb-2026-10-d.xlsx
+      - id: "6-24"
+        format: xlsx
+        period: "2026-10"
+        page: https://www.sem.admin.ch/de/asylstatistik-oktober-2026
+        url: https://www.sem.admin.ch/dam/de/sd-web/6OFjNdGnYSCt/6-24-best-s-erwerb-2026-10-d.xlsx
 
   - id: fedlex
     title: Fedlex
     questions: [E]
     type: sparql
     url: https://fedlex.data.admin.ch/sparqlendpoint
-    enabled: false
+    enabled: true

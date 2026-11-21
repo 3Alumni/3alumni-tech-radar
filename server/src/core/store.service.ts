@@ -12,4 +12,8 @@ export class StoreService {
   latest(question: Question): Metric[] {
     return this.metrics.filter((metric) => metric.question === question);
   }
+
+  snapshot(): Metric[] {
+    return this.metrics;
+  }
 }
