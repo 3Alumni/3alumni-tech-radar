@@ -1,0 +1,9 @@
+# Staff-editable skill map. The embedding model may only suggest a line.
+# A phrase reaches the chart after it is written here.
+#
+# mappings:
+#   - phrase: ReactJS
+#     label: React
+#     esco: https://esco.ec.europa.eu/
+
+mappings: []

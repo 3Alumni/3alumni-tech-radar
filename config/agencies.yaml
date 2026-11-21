@@ -1,0 +1,19 @@
+# Staffing firms dropped from the outreach list.
+# A phrase match in the posting is the second signal. A model does not remove anyone.
+
+names:
+  - Adecco
+  - Randstad
+  - Manpower
+  - Hays
+  - Michael Page
+  - Robert Half
+  - Kelly Services
+  - Gi Group
+  - Coople
+
+phrases:
+  - im Auftrag unseres Kunden
+  - Personalvermittlung
+  - pour notre client
+  - on behalf of our client

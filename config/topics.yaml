@@ -1,0 +1,12 @@
+# Email topics. A topic points at a question already on a tab.
+# The letter sends the stored summary. It does not run a second one.
+
+topics:
+  - id: skills-it-support
+    title: Skills for IT support
+    question: B
+    role: it-support
+
+  - id: policy-status-f
+    title: New policy on status F
+    question: E

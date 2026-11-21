@@ -1,0 +1,26 @@
+# Graduate roles. Queries are data: add a language line, no code change.
+
+roles:
+  - id: web-developer
+    title: Web developer
+    queries:
+      - lang: de
+        what: Webentwickler
+      - lang: en
+        what: web developer
+
+  - id: it-support
+    title: IT support
+    queries:
+      - lang: de
+        what: Informatik-Support
+      - lang: en
+        what: IT support
+
+  - id: data-analyst
+    title: Data analyst
+    queries:
+      - lang: de
+        what: Datenanalyst
+      - lang: en
+        what: data analyst

@@ -1,0 +1,38 @@
+# A connector is one folder under server/src/connectors plus a block here.
+# The dashboard never calls a source directly. It reads metrics from the store.
+
+sources:
+  - id: adzuna
+    title: Adzuna
+    questions: [A, B, C]
+    type: rest
+    url: https://developer.adzuna.com/
+    enabled: true
+
+  - id: bfs
+    title: Federal Statistical Office
+    questions: [A, D]
+    type: pxweb
+    url: https://www.pxweb.bfs.admin.ch/api/v1/en
+    enabled: false
+
+  - id: esco
+    title: ESCO
+    questions: [B]
+    type: rest
+    url: https://ec.europa.eu/esco/api
+    enabled: false
+
+  - id: sem
+    title: State Secretariat for Migration
+    questions: [D]
+    type: file
+    url: https://www.sem.admin.ch/de/asylstatistik
+    enabled: false
+
+  - id: fedlex
+    title: Fedlex
+    questions: [E]
+    type: sparql
+    url: https://fedlex.data.admin.ch/sparqlendpoint
+    enabled: false
