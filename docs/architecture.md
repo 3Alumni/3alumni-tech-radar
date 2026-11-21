@@ -7,13 +7,14 @@ One repo, two apps. The client renders metrics. The server collects them. Neithe
 | Path | Owns |
 |---|---|
 | `client/src/views` | Demand, Skills, Employers, Context, Sources |
-| `server/src/connectors` | One folder per source. Same `Connector` interface. |
-| `server/src/metrics` | The metric contract. |
-| `server/src/store` | Snapshots. Tabs read the latest snapshot. |
-| `server/src/registry` | Loads `config/*.yaml`. |
-| `server/src/skills` | ESCO match and `synonyms.yaml`. |
-| `server/src/summaries` | One model. Policy prose, a short people readout, nothing else. |
-| `server/src/reports` | Sends a stored summary for a topic in `topics.yaml`. |
+| `server/src/connectors` | Nest module. One folder per source, same `Connector` interface. |
+| `server/src/metrics` | The metric contract. Not a Nest module. |
+| `server/src/store` | Nest module. Latest snapshot, `GET /metrics`. |
+| `server/src/registry` | Nest module. Loads `config/*.yaml`, `GET /sources`. |
+| `server/src/skills` | Nest module. ESCO match and `synonyms.yaml`. |
+| `server/src/employers` | Nest module. Agency list and phrases. |
+| `server/src/summaries` | Nest module. One model. Policy prose, a short people readout. |
+| `server/src/reports` | Nest module. Topic preview from a stored summary, `GET /topics`. |
 | `config/` | Sources, roles, topics, synonyms, agencies. |
 | `docs/` | This note and how to add a source. |
 
