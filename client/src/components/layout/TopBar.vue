@@ -2,11 +2,11 @@
 import { ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import { ICON } from '@/lib/format'
-import { useSnapshot } from '@/composables/useSnapshot'
+import { usePolicyRead } from '@/composables/usePolicyRead'
 import { useSidebar } from '@/composables/useSidebar'
 import { useView } from '@/composables/useView'
 
-const { newPolicyCount } = useSnapshot()
+const { unreadCount: newPolicyCount } = usePolicyRead()
 const { drawerOpen, openDrawer } = useSidebar()
 const { current, go } = useView()
 const menuBtn = ref<HTMLButtonElement | null>(null)

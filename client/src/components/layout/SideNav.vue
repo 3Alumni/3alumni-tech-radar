@@ -4,12 +4,12 @@ import Icon from '@/components/ui/Icon.vue'
 import { ICON } from '@/lib/format'
 import { NAV_GENERAL, NAV_MAIN, useView, type NavItem } from '@/composables/useView'
 import { useSidebar } from '@/composables/useSidebar'
-import { useSnapshot } from '@/composables/useSnapshot'
+import { usePolicyRead } from '@/composables/usePolicyRead'
 
 const emit = defineEmits<{ closed: [] }>()
 const { current, go } = useView()
 const { collapsed, drawerOpen, toggleCollapsed, closeDrawer } = useSidebar()
-const { newPolicyCount } = useSnapshot()
+const { unreadCount: newPolicyCount } = usePolicyRead()
 const closeBtn = ref<HTMLButtonElement | null>(null)
 
 const groups: { title: string; items: NavItem[] }[] = [

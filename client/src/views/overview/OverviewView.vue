@@ -12,7 +12,7 @@ import { useView } from '@/composables/useView'
 import { useSalaryDialog } from '@/composables/useSalaryDialog'
 import { useCountUp } from '@/composables/useMotion'
 
-const { snapshot, roles, newPolicyCount, canShow } = useSnapshot()
+const { roles, canShow } = useSnapshot()
 const ins = useInsights()
 const { go } = useView()
 const salary = useSalaryDialog()
@@ -53,12 +53,6 @@ const empTop = computed(() => ins.employersAll.value.slice(0, 4))
         <span class="tile-v">{{ ins.risingSkill.value }}</span>
         <span class="small muted">for {{ ins.roleLabel.value }}</span>
         <span class="tile-more">Skills<Icon :path="ICON.arrow" small /></span>
-      </button>
-      <button type="button" class="tile" @click="go('policy')">
-        <span class="small muted">New policy items</span>
-        <span class="tile-v">{{ newPolicyCount }}</span>
-        <span v-if="snapshot?.previousSnapshotDate" class="small muted">since {{ fmtDate(snapshot.previousSnapshotDate) }}</span>
-        <span class="tile-more">Policy<Icon :path="ICON.arrow" small /></span>
       </button>
     </div>
 
@@ -110,7 +104,7 @@ const empTop = computed(() => ins.employersAll.value.slice(0, 4))
 </template>
 
 <style scoped>
-.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-3); }
 .tile {
   display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-1); padding: 20px;
   background: var(--color-surface); border: var(--border) solid var(--color-border);
@@ -131,7 +125,6 @@ const empTop = computed(() => ins.employersAll.value.slice(0, 4))
   .pol-list { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .pol-list li, .pol-list li:first-child { border-left: 0; padding: 12px 0; border-top: var(--border) solid var(--color-border); }
   .pol-list li:first-child { border-top: 0; padding-top: 0; }
-  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 639px) {
   .tile { padding: var(--space-3); }

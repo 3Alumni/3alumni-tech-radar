@@ -10,6 +10,7 @@ import { daysBetween } from '@/lib/format'
  * On error we fall back to the last good snapshot kept in localStorage, if there is one.
  *
  * Demo: add ?state=loading|empty|outdated|error to the URL to preview each state in the pitch.
+ * New data: the file is re-checked every 60 s and when the tab regains focus; changes appear without a reload.
  */
 
 export type LoadStatus = 'loading' | 'ready' | 'empty' | 'error'
@@ -60,8 +61,10 @@ async function load() {
   try {
     const res = await fetch(`${import.meta.env.BASE_URL}snapshot.json`, { cache: 'no-cache' })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const checked = validateSnapshot(await res.json())
+    const raw = await res.text()
+    const checked = validateSnapshot(JSON.parse(raw))
     if (!checked.ok) throw new Error(checked.error)
+    lastRaw = raw
     writeCache(checked.data)
     data.value = checked.data
     if (demo.value === 'error') throw new Error('Demo error state')
@@ -73,10 +76,42 @@ async function load() {
   }
 }
 
+/**
+ * Background refresh: re-check snapshot.json without showing the loader.
+ * Only swaps the data when the file actually changed, so nothing re-renders or re-animates for no reason.
+ * A failed check keeps the current data (it is not an error the viewer needs to see).
+ */
+const REFRESH_MS = 60_000
+let lastRaw = ''
+async function refresh() {
+  if (demo.value || document.visibilityState !== 'visible') return
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}snapshot.json`, { cache: 'no-cache' })
+    if (!res.ok) return
+    const raw = await res.text()
+    if (raw === lastRaw) return
+    const checked = validateSnapshot(JSON.parse(raw))
+    if (!checked.ok) return
+    lastRaw = raw
+    writeCache(checked.data)
+    data.value = checked.data
+    status.value = hasJobAds(checked.data) ? 'ready' : 'empty'
+  } catch {
+    /* keep showing what we have */
+  }
+}
+
+function startAutoRefresh() {
+  window.setInterval(refresh, REFRESH_MS)
+  document.addEventListener('visibilitychange', refresh) // coming back to the tab
+  window.addEventListener('focus', refresh)
+}
+
 export function useSnapshot() {
   if (!started) {
     started = true
     void load()
+    startAutoRefresh()
   }
 
   const snapshot = computed(() => data.value)

@@ -4,12 +4,12 @@ import Icon from '@/components/ui/Icon.vue'
 import DataAlerts from '@/components/ui/DataAlerts.vue'
 import CardState from '@/components/ui/CardState.vue'
 import { ICON, fmtDate, isExternalUrl } from '@/lib/format'
-import { useInsights, POLICY_TYPE_LABEL } from '@/composables/useInsights'
-import { useSnapshot } from '@/composables/useSnapshot'
+import { useInsights } from '@/composables/useInsights'
+import { usePolicyRead } from '@/composables/usePolicyRead'
 
 const PAGE = 3
-const { snapshot, newPolicyCount } = useSnapshot()
 const { policySorted } = useInsights()
+const { isUnread, markRead } = usePolicyRead()
 const showOlder = ref(false)
 const items = computed(() => (showOlder.value ? policySorted.value : policySorted.value.slice(0, PAGE)))
 </script>
@@ -24,27 +24,24 @@ const items = computed(() => (showOlder.value ? policySorted.value : policySorte
 
     <CardState :empty="!policySorted.length">
       <template #empty><b>No policy items yet.</b> Check again after the next data update.</template>
-      <p v-if="snapshot?.previousSnapshotDate" class="new-bar">
-        <b>{{ newPolicyCount }} new</b>&nbsp;since {{ fmtDate(snapshot.previousSnapshotDate) }}
-      </p>
       <ol class="tl">
-        <li v-for="p in items" :key="p.id" class="tl-item">
+        <li v-for="p in items" :key="p.id" :class="['tl-item', { unread: isUnread(p) }]" @click="markRead(p.id)">
           <p class="small muted">
-            <b class="date">{{ fmtDate(p.publishedDate) }}</b><br />{{ POLICY_TYPE_LABEL[p.type] }}
+            <b class="date">{{ fmtDate(p.publishedDate) }}</b>
           </p>
           <div class="tl-body">
-            <h2 class="q">{{ p.title }}</h2>
+            <h2 class="q">
+              <button type="button" class="tl-title" @click.stop="markRead(p.id)">
+                <span v-if="isUnread(p)" class="sr">New, unread: </span>{{ p.title }}
+              </button>
+            </h2>
             <p>{{ p.summary }}</p>
             <p class="small muted meta">
-              <span class="has-tip ai" tabindex="0">Summary by AI<span class="tip">Check the original before acting on it</span></span>
-              <span aria-hidden="true">·</span>
               <span>
                 Source:
-                <a v-if="isExternalUrl(p.sourceUrl)" :href="p.sourceUrl" target="_blank" rel="noopener noreferrer">{{ p.sourceName }}</a>
+                <a v-if="isExternalUrl(p.sourceUrl)" :href="p.sourceUrl" target="_blank" rel="noopener noreferrer" @click="markRead(p.id)">{{ p.sourceName }}</a>
                 <template v-else>{{ p.sourceName }}</template>
               </span>
-              <span aria-hidden="true">·</span>
-              <span>Downloaded {{ fmtDate(p.downloadedDate) }}</span>
             </p>
           </div>
         </li>
@@ -64,18 +61,24 @@ const items = computed(() => (showOlder.value ? policySorted.value : policySorte
 
 <style scoped>
 .view { gap: var(--space-4); }
-.new-bar { display: flex; align-items: center; }
 .tl { border-top: var(--border) solid var(--color-text); }
 .tl-item {
   display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: var(--space-3);
   padding: 20px var(--space-3); margin: 0 calc(-1 * var(--space-3));
   border-bottom: var(--border) solid var(--color-border); transition: background-color .12s;
 }
+.tl-item { cursor: pointer; }
 .tl-item:hover { background: var(--color-surface); }
+/* New and not opened yet: light red, with a red rail on the left edge */
+.tl-item.unread { background: var(--color-action-subtle); box-shadow: inset 3px 0 0 var(--color-action); }
+.tl-item.unread:hover { background: var(--color-action-subtle); }
+.tl-title {
+  padding: 0; border: 0; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.tl-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 .date { color: var(--color-text); }
 .tl-body { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 .meta { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); }
-.ai { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
 .more { align-self: flex-start; }
 @media (max-width: 639px) {
   .tl-item { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }

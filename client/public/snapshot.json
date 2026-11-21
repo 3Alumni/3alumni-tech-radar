@@ -568,7 +568,7 @@
       "downloadedDate": "2026-11-20",
       "summary": "Occupations where employers must first report vacancies to the job centre. If IT support is on it, partners hiring for it take an extra step.",
       "impact": "medium",
-      "isNew": true
+      "isNew": false
     },
     {
       "id": "p3",
@@ -580,7 +580,7 @@
       "downloadedDate": "2026-11-20",
       "summary": "Monthly figures on asylum applications and residence status by canton. Useful for outreach and class planning.",
       "impact": "low",
-      "isNew": true
+      "isNew": false
     },
     {
       "id": "p4",

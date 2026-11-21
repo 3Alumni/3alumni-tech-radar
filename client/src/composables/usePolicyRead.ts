@@ -1,0 +1,35 @@
+import { computed, ref } from 'vue'
+import { useSnapshot } from './useSnapshot'
+
+/**
+ * Which new policy items this viewer has opened. Per-browser convenience only (localStorage):
+ * nothing is sent anywhere, and it works without storage (everything just stays "unread").
+ */
+const KEY = 'market-radar:policy-read'
+const read = ref<Set<string>>(new Set())
+
+try {
+  const raw = localStorage.getItem(KEY)
+  if (raw) read.value = new Set(JSON.parse(raw) as string[])
+} catch {
+  /* storage unavailable */
+}
+
+export function usePolicyRead() {
+  const { snapshot } = useSnapshot()
+
+  const isUnread = (p: { id: string; isNew: boolean }) => p.isNew && !read.value.has(p.id)
+  const unreadCount = computed(() => (snapshot.value?.policy ?? []).filter(isUnread).length)
+
+  function markRead(id: string) {
+    if (read.value.has(id)) return
+    read.value = new Set([...read.value, id])
+    try {
+      localStorage.setItem(KEY, JSON.stringify([...read.value]))
+    } catch {
+      /* ignore */
+    }
+  }
+
+  return { isUnread, unreadCount, markRead }
+}
