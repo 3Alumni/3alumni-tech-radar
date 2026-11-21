@@ -39,8 +39,8 @@ const companies = computed(() => {
   return [...direct, ...agencies].sort((a, b) => b.jobs - a.jobs || a.name.localeCompare(b.name))
 })
 const list = computed(() => (showAll.value ? companies.value : companies.value.slice(0, PAGE)))
-// Only show the Tags column when at least one visible row has a tag.
-const hasTags = computed(() => list.value.some((e) => e.agency))
+// Hide agencies removes recruiters. Senior, Junior and the other labels stay.
+const hasTags = computed(() => companies.value.some((e) => e.tags.length || (!hideAgency.value && e.agency)))
 
 watch(role, () => {
   showAll.value = false
@@ -161,11 +161,11 @@ function tagClass(tag: string) {
 .al-empty { background: var(--color-bg); border-color: var(--color-border); }
 .reset { margin-left: auto; }
 /* A real table: fixed columns so headers sit exactly over their cells */
-.emp-tbl { table-layout: fixed; max-width: 880px; }
+.emp-tbl { table-layout: fixed; }
 .emp-tbl th, .emp-tbl td { padding: 14px var(--space-3); }
-.emp-tbl .c-num { width: 160px; }
-.emp-tbl .c-tags { width: 160px; }
-.emp-tbl .c-link { width: 140px; }
+.emp-tbl .c-num { width: 140px; }
+.emp-tbl .c-tags { width: 280px; }
+.emp-tbl .c-link { width: 120px; }
 /* Everything after the company name is centred, headers and cells alike */
 .emp-tbl th:not(:first-child), .emp-tbl td:not(:first-child) { text-align: center; }
 .emp-tbl .tags { justify-content: center; }
