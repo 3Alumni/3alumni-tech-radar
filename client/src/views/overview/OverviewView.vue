@@ -11,6 +11,7 @@ import { DEMAND_WEEK_AGO, weekAgoOpenings } from '@/data/demandWeekAgo.sample'
 import { useView } from '@/composables/useView'
 import { useSalaryDialog } from '@/composables/useSalaryDialog'
 import { useCountUp } from '@/composables/useMotion'
+import { shadeLevel } from '@/lib/shade'
 
 const ROLES = [
   { id: 'web-developer', label: 'Web developer' },
@@ -48,6 +49,8 @@ const ranking = computed(() =>
   })).sort((a, b) => b.openings - a.openings || a.label.localeCompare(b.label)),
 )
 const rankMax = computed(() => Math.max(...ranking.value.map((row) => row.openings), 1))
+// Same red steps as the canton map and skill bars.
+const rankLevel = computed(() => shadeLevel(rankMax.value))
 const employerTop = computed(() => {
   const payload = employers.data.value
   if (!payload) return []
@@ -129,12 +132,15 @@ function openSalary() {
           <h2 id="race-q" class="q">Which role has the most job ads?</h2>
         </div>
         <div class="rank" role="list">
-          <button v-for="item in ranking" :key="item.id" type="button" class="rank-row" @click="role = item.id; openSalary()">
+          <button
+            v-for="item in ranking" :key="item.id" type="button" class="rank-row"
+            :aria-pressed="item.id === role" @click="role = item.id; openSalary()"
+          >
             <span class="rank-name">{{ item.label }}</span>
             <span class="rank-track">
-              <span :class="['rank-fill', { sel: item.id === role }]" :style="{ width: (item.openings / rankMax) * 100 + '%' }" />
-              <span class="num">{{ fmtNum(item.openings) }}</span>
+              <span :class="['rank-fill', `shade-${rankLevel(item.openings)}`]" :style="{ width: (item.openings / rankMax) * 100 + '%' }" />
             </span>
+            <span class="rank-val num">{{ fmtNum(item.openings) }}</span>
           </button>
         </div>
         <p class="small muted">Click a role to see the IT salary trend.</p>
@@ -180,16 +186,28 @@ function openSalary() {
 .tile-more { margin-top: auto; padding-top: 12px; display: inline-flex; align-items: center; gap: var(--space-1); font-size: 14px; font-weight: 600; color: var(--color-action); }
 .tile:hover .tile-more { text-decoration: underline; text-underline-offset: 3px; }
 .up, .down { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 4px; }
-.rank { display: flex; flex-direction: column; gap: 8px; }
+.rank { display: flex; flex-direction: column; gap: 4px; }
+.rank:hover .rank-row { opacity: .5; }
+.rank:hover .rank-row:hover { opacity: 1; }
 .rank-row {
-  display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px; align-items: center;
-  width: 100%; padding: 2px 0; color: var(--color-text); text-align: left; background: transparent; border: 0; cursor: pointer;
+  display: grid; grid-template-columns: 140px minmax(0, 1fr) 64px; gap: 16px; align-items: center;
+  width: calc(100% + 16px); min-height: 44px; margin: 0 calc(-1 * var(--space-2)); padding: 0 var(--space-2);
+  color: var(--color-text); text-align: left; background: transparent; border: 0; cursor: pointer;
+  transition: background-color .15s, opacity .15s;
 }
-.rank-name { font-weight: 600; }
-.rank-row:hover .rank-name { color: var(--color-action); }
-.rank-track { display: flex; align-items: center; gap: var(--space-2); min-width: 0; }
-.rank-fill { display: block; height: 24px; background: var(--color-text-muted); }
-.rank-fill.sel { background: var(--color-action); }
+.rank-row:hover { background: var(--color-bg); }
+.rank-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Track + fill: colour = openings level (.shade-N in base.css) */
+.rank-track { height: 16px; min-width: 0; background: var(--color-bg); }
+.rank-row:hover .rank-track { background: var(--color-surface); }
+.rank-fill { display: block; height: 100%; min-width: 4px; transition: width .5s var(--ease-out), box-shadow .15s; }
+.rank-row:hover .rank-fill { box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 3px var(--color-red-3); }
+.rank-val { display: flex; justify-content: flex-end; font-size: 15px; font-weight: 600; color: var(--color-text-muted); transition: color .15s; }
+.rank-row:hover .rank-val { color: var(--color-text); }
+/* Selected role */
+.rank-row[aria-pressed="true"] { background: var(--color-action-subtle); box-shadow: inset 3px 0 0 var(--color-action); }
+.rank-row[aria-pressed="true"] .rank-name, .rank-row[aria-pressed="true"] .rank-val { color: var(--color-action-strong); font-weight: 700; }
+.rank-row[aria-pressed="true"] .rank-track { background: var(--color-surface); }
 .mini-list { display: flex; flex-direction: column; }
 .mini-list li { display: flex; flex-direction: column; gap: var(--space-1); padding: 12px 0; border-top: var(--border) solid var(--color-border); }
 .mini-list li:first-child { border-top: 0; padding-top: 0; }
@@ -204,6 +222,6 @@ function openSalary() {
 @media (max-width: 639px) {
   .tile { padding: var(--space-3); }
   .tile-v { font-size: 22px; line-height: 28px; }
-  .rank-row { grid-template-columns: 96px minmax(0, 1fr); }
+  .rank-row { grid-template-columns: 96px minmax(0, 1fr) 52px; gap: var(--space-2); }
 }
 </style>

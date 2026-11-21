@@ -6,6 +6,7 @@ import type { Feature, FeatureCollection, Geometry } from 'geojson'
 import type { GeometryCollection, Topology } from 'topojson-specification'
 import { fmtNum } from '@/lib/format'
 import { CANTONS, cantonId } from '@/lib/cantons'
+import { shadeLevel } from '@/lib/shade'
 import { useElementWidth } from '@/composables/useMotion'
 import type { CantonCount } from '@/lib/types'
 
@@ -63,18 +64,11 @@ const byId = computed(() => {
 })
 const unmatched = computed(() => props.cantons.filter((c) => !cantonId(c.canton)).map((c) => c.canton))
 
-// Sequential greys in 4 equal steps from 0 to the top canton (classes map to CSS tokens).
+// Sequential reds in 4 steps from 0 to the top canton (classes map to CSS tokens).
 const top = computed(() => max(props.cantons, (c) => c.count) || 1)
 // Small counts (≤ 4): one step per count, legend shows plain numbers. Larger: 4 equal ranges.
 const small = computed(() => top.value <= 4)
-const scale = computed(() => {
-  if (small.value) {
-    const offset = 4 - top.value // darkest step = top count
-    return (v: number) => Math.min(4, Math.max(1, Math.round(v) + offset))
-  }
-  const q = scaleQuantize<number>().domain([0, top.value]).range([1, 2, 3, 4])
-  return (v: number) => q(v)
-})
+const scale = computed(() => shadeLevel(top.value))
 const legend = computed(() => {
   if (small.value)
     return Array.from({ length: top.value }, (_, i) => i + 1).map((n) => ({ lvl: scale.value(n), label: fmtNum(n) }))

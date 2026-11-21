@@ -23,3 +23,4 @@ export function cantonId(name: string): number | null {
   for (const [id, label] of Object.entries(CANTONS)) if (norm(label) === n) return Number(id)
   return ALIASES[n] ?? null
 }
+
