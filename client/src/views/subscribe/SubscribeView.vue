@@ -118,7 +118,7 @@ function demandSection(body: {
   roles?: { role: string; lang: string | null; openings: number; sourceUrl: string; fetchedAt: string; cantons: { canton: string; postings: number }[] }[]
 }): Pick<Briefing, 'summary' | 'items'> {
   const roles = body.roles ?? []
-  if (!roles.length) return { summary: 'No saved ads on the Demand page yet.', items: [] }
+  if (!roles.length) return { summary: 'No jobs on the Demand page yet.', items: [] }
   const groups = new Map<string, typeof roles>()
   for (const role of roles) {
     const list = groups.get(role.role) ?? []
@@ -128,7 +128,7 @@ function demandSection(body: {
   const items = [...groups.entries()].map(([role, rows]) => {
     const counts = rows.map((row) => `${fmtNum(row.openings)} ${LANG_LABEL[row.lang ?? ''] ?? row.lang ?? ''}`.trim())
     const top = rows.flatMap((row) => row.cantons).sort((a, b) => b.postings - a.postings)[0]
-    const where = top ? ` Most saved ads are in ${top.canton} (${fmtNum(top.postings)}).` : ''
+    const where = top ? ` Most jobs are in ${top.canton} (${fmtNum(top.postings)}).` : ''
     const when = rows[0]?.fetchedAt ? ` · ${fmtDate(rows[0].fetchedAt.slice(0, 10))}` : ''
     return {
       body: `${ROLE_LABEL[role] ?? role}: ${counts.join(' and ')}.${where}`,
@@ -136,6 +136,12 @@ function demandSection(body: {
     }
   })
   return { summary: '', items }
+}
+
+/** "IT support: 1'240 German." → head "IT support" (shown bold) + rest. No colon → no head. */
+function splitHead(body: string): { head: string; rest: string } {
+  const i = body.indexOf(': ')
+  return i > 0 ? { head: body.slice(0, i), rest: body.slice(i + 2) } : { head: '', rest: body }
 }
 
 function skillsSection(body: {
@@ -148,7 +154,7 @@ function skillsSection(body: {
   if (!ads || !skills.length) return { summary: '', items: [] }
   return {
     summary: '',
-    items: skills.map((skill) => ({ body: `${skill.label}: ${fmtNum(skill.count)} of ${fmtNum(ads)} ads`, source })),
+    items: skills.map((skill) => ({ body: `${skill.label}: ${fmtNum(skill.count)} of ${fmtNum(ads)} jobs`, source })),
   }
 }
 
@@ -163,7 +169,7 @@ function employersSection(body: {
   return {
     summary: '',
     items: companies.slice(0, 8).map((company) => ({
-      body: `${company.company}: ${fmtNum(company.postings)} saved ads`,
+      body: `${company.company}: ${fmtNum(company.postings)} jobs`,
       source: `${company.company}, ${company.urls[0] ?? body.basis?.sourceUrl ?? 'https://www.adzuna.ch/'}`,
     })),
   }
@@ -300,8 +306,9 @@ function isoWeek(iso: string) {
                 </template>
                 <ul v-if="briefings[section.key]!.items.length">
                   <li v-for="item in briefings[section.key]!.items" :key="item.body">
-                    {{ item.body }}
-                    <span class="small muted">
+                    <template v-if="splitHead(item.body).head"><b>{{ splitHead(item.body).head }}:</b> {{ splitHead(item.body).rest }}</template>
+                    <template v-else>{{ item.body }}</template>
+                    <span class="small muted src-row">
                       Source:
                       <template v-for="(chunk, i) in parts(item.source)" :key="i">
                         <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
@@ -334,7 +341,6 @@ function isoWeek(iso: string) {
                 </div>
               </template>
             </div>
-            <p class="small muted">Unsubscribe link goes here</p>
           </div>
         </div>
       </div>
@@ -357,11 +363,12 @@ function isoWeek(iso: string) {
 .mail-body { padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; overflow-wrap: anywhere; }
 .mail-body a { overflow-wrap: anywhere; word-break: break-all; }
 .mail-pt { display: flex; flex-direction: column; gap: var(--space-1); padding-bottom: var(--space-3); border-bottom: var(--border) solid var(--color-border); min-width: 0; }
-.mail-body ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 4px; }
+.mail-body ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: var(--space-3); }
 @media (max-width: 1023px) {
   .split { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 639px) {
   .panel { padding: var(--space-3); }
 }
+.src-row { display: block; margin-top: 2px; }
 </style>
