@@ -4,6 +4,7 @@ import Icon from '@/components/ui/Icon.vue'
 import SourceChip from '@/components/ui/SourceChip.vue'
 import CantonBars from '@/components/charts/CantonBars.vue'
 import CantonMap from '@/components/charts/CantonMap.vue'
+import TrendLine from '@/components/charts/TrendLine.vue'
 import { ICON, fmtDate, fmtNum, fmtPct } from '@/lib/format'
 import { cantonMapName, useDemand } from '@/composables/useDemand'
 import { DEMAND_WEEK_AGO, weekAgoOpenings } from '@/data/demandWeekAgo.sample'
@@ -39,6 +40,30 @@ const weekDeltaPct = computed(() => {
   const prior = priorOpenings.value
   if (!current.value || prior == null || prior === 0) return null
   return Math.round((current.value.openings / prior - 1) * 100)
+})
+const trendPoints = computed(() => {
+  const prior = priorOpenings.value
+  if (!current.value || prior == null) return []
+  const now = current.value.fetchedAt.slice(0, 10)
+  return [
+    {
+      key: DEMAND_WEEK_AGO.asOf,
+      label: `${fmtDate(DEMAND_WEEK_AGO.asOf)}, sample`,
+      short: fmtDate(DEMAND_WEEK_AGO.asOf).replace(/ \d{4}$/, ''),
+      value: prior,
+    },
+    {
+      key: now,
+      label: fmtDate(now),
+      short: fmtDate(now).replace(/ \d{4}$/, ''),
+      value: current.value.openings,
+    },
+  ]
+})
+const trendSummary = computed(() => {
+  const [then, now] = trendPoints.value
+  if (!then || !now || !current.value) return ''
+  return `${current.value.query}: ${fmtNum(then.value)} sample ads on ${then.label}, ${fmtNum(now.value)} Adzuna ads on ${now.label}`
 })
 
 function toggleRegion(canton: string) {
@@ -104,6 +129,7 @@ function openSalary() {
           <span class="tag tag-sample">Sample</span>
           <span class="muted small">{{ fmtNum(priorOpenings) }} a week ago. Invented, not an Adzuna count.</span>
         </p>
+        <TrendLine v-if="trendPoints.length" :points="trendPoints" :summary="trendSummary" />
         <p v-if="!current" class="muted"><b>No job ads yet</b> for this role and language.</p>
         <button type="button" class="btn btn-ghost sal-link" :disabled="!salaryTrend" @click="openSalary">
           Average IT salary, last 12 months<Icon :path="ICON.arrow" small />
