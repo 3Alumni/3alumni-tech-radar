@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
-import { RegistryModule } from "../registry/registry.module";
+import { EmployersController } from "./employers.controller";
 import { EmployersService } from "./employers.service";
 
 @Module({
-  imports: [RegistryModule],
+  controllers: [EmployersController],
   providers: [EmployersService],
   exports: [EmployersService],
 })

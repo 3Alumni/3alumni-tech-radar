@@ -4,7 +4,7 @@ Monolith for the Powercoders market radar. Vue reads metrics. Nest writes them. 
 
 ```
 client/     Vue app. One view per tab.
-server/     Nest app. Connectors, store, summaries.
+server/     Nest app. One folder per block, plus core for the snapshot.
 config/     Sources, roles, topics, synonyms, agencies.
 docs/       How the pieces fit and how to add a source.
 ```

@@ -1,19 +1,23 @@
 import { Module } from "@nestjs/common";
-import { ConnectorsModule } from "./connectors/connectors.module";
+import { CoreModule } from "./core/core.module";
+import { DemandModule } from "./demand/demand.module";
 import { EmployersModule } from "./employers/employers.module";
-import { RegistryModule } from "./registry/registry.module";
+import { PeopleModule } from "./people/people.module";
+import { PolicyModule } from "./policy/policy.module";
 import { ReportsModule } from "./reports/reports.module";
 import { SkillsModule } from "./skills/skills.module";
-import { StoreModule } from "./store/store.module";
+import { SourcesModule } from "./sources/sources.module";
 import { SummariesModule } from "./summaries/summaries.module";
 
 @Module({
   imports: [
-    RegistryModule,
-    StoreModule,
-    ConnectorsModule,
+    CoreModule,
+    DemandModule,
     SkillsModule,
     EmployersModule,
+    PeopleModule,
+    PolicyModule,
+    SourcesModule,
     SummariesModule,
     ReportsModule,
   ],

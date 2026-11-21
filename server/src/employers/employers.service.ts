@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { RegistryService } from "../registry/registry.service";
+import { ConfigService } from "../core/config.service";
 
 export interface AgencyDecision {
   agency: boolean;
@@ -8,10 +8,10 @@ export interface AgencyDecision {
 
 @Injectable()
 export class EmployersService {
-  constructor(private readonly registry: RegistryService) {}
+  constructor(private readonly config: ConfigService) {}
 
   classify(company: string, text = ""): AgencyDecision {
-    const agencies = this.registry.agencies();
+    const agencies = this.config.agencies();
     const name = agencies.names.find((item) =>
       company.toLowerCase().includes(item.toLowerCase()),
     );

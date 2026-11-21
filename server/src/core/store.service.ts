@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { Metric, Question } from "../metrics/metric";
+import { Metric, Question } from "./metric";
 
 @Injectable()
 export class StoreService {
@@ -9,10 +9,7 @@ export class StoreService {
     this.metrics = metrics;
   }
 
-  latest(question?: Question): Metric[] {
-    if (!question) {
-      return this.metrics;
-    }
+  latest(question: Question): Metric[] {
     return this.metrics.filter((metric) => metric.question === question);
   }
 }

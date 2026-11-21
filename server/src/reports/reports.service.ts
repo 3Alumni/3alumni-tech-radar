@@ -1,19 +1,19 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { RegistryService } from "../registry/registry.service";
-import { TopicConfig } from "../registry/registry.types";
-import { StoreService } from "../store/store.service";
+import { ConfigService } from "../core/config.service";
+import { TopicConfig } from "../core/config.types";
+import { StoreService } from "../core/store.service";
 import { SummariesService } from "../summaries/summaries.service";
 
 @Injectable()
 export class ReportsService {
   constructor(
-    private readonly registry: RegistryService,
+    private readonly config: ConfigService,
     private readonly store: StoreService,
     private readonly summaries: SummariesService,
   ) {}
 
   topics(): TopicConfig[] {
-    return this.registry.topics();
+    return this.config.topics();
   }
 
   preview(topicId: string): string {

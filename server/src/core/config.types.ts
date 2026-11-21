@@ -1,4 +1,4 @@
-import { Question } from "../metrics/metric";
+import { Question } from "./metric";
 
 export interface SourceConfig {
   id: string;

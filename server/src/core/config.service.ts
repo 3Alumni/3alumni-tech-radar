@@ -8,10 +8,10 @@ import {
   SourceConfig,
   SynonymMapping,
   TopicConfig,
-} from "./registry.types";
+} from "./config.types";
 
 @Injectable()
-export class RegistryService {
+export class ConfigService {
   private readonly dir = resolveConfigDir();
 
   sources(): SourceConfig[] {

@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
-import { RegistryModule } from "../registry/registry.module";
+import { SkillsController } from "./skills.controller";
 import { SkillsService } from "./skills.service";
 
 @Module({
-  imports: [RegistryModule],
+  controllers: [SkillsController],
   providers: [SkillsService],
   exports: [SkillsService],
 })
