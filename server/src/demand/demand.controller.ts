@@ -1,12 +1,12 @@
 import { Controller, Get } from "@nestjs/common";
-import { StoreService } from "../core/store.service";
+import { DemandService } from "./demand.service";
 
 @Controller("demand")
 export class DemandController {
-  constructor(private readonly store: StoreService) {}
+  constructor(private readonly demand: DemandService) {}
 
   @Get()
   list() {
-    return this.store.latest("A");
+    return this.demand.list();
   }
 }
