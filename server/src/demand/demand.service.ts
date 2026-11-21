@@ -30,6 +30,22 @@ export interface DemandPosting {
   postedAt: string | null;
 }
 
+export interface SalaryPoint {
+  month: string;
+  salary: number;
+}
+
+export interface SalaryTrend {
+  category: string;
+  label: string;
+  currency: "CHF";
+  scope: "category";
+  sourceId: string;
+  sourceUrl: string;
+  fetchedAt: string;
+  months: SalaryPoint[];
+}
+
 export interface DemandRole {
   role: string;
   query: string;
@@ -49,7 +65,7 @@ export interface DemandRole {
 export class DemandService {
   constructor(private readonly db: DbService) {}
 
-  async list(): Promise<{ roles: DemandRole[] }> {
+  async list(): Promise<{ roles: DemandRole[]; salaryTrend: SalaryTrend | null }> {
     const metrics = await this.db.pool.query<MetricRow>(
       `SELECT role, label, period, value, unit, geo, source_id, source_url, fetched_at, snapshot_id
        FROM metrics
@@ -99,7 +115,34 @@ export class DemandService {
         postings: mapped,
       });
     }
-    return { roles };
+    return { roles, salaryTrend: await this.salaryTrend() };
+  }
+
+  private async salaryTrend(): Promise<SalaryTrend | null> {
+    const points = await this.db.pool.query<{ month: string; salary: number; source_url: string; fetched_at: Date }>(
+      `SELECT to_char(month, 'YYYY-MM') AS month,
+              salary::float8 AS salary,
+              source_url,
+              fetched_at
+       FROM salary_points
+       WHERE category = 'it-jobs'
+         AND fetched_at = (SELECT max(fetched_at) FROM salary_points WHERE category = 'it-jobs')
+       ORDER BY month`,
+    );
+    const first = points.rows[0];
+    if (!first) {
+      return null;
+    }
+    return {
+      category: "it-jobs",
+      label: "IT Jobs",
+      currency: "CHF",
+      scope: "category",
+      sourceId: "adzuna",
+      sourceUrl: first.source_url,
+      fetchedAt: new Date(first.fetched_at).toISOString(),
+      months: points.rows.map((row) => ({ month: row.month, salary: row.salary })),
+    };
   }
 }
 
