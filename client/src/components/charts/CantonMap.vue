@@ -109,7 +109,7 @@ const labelled = computed(() => {
 // Text alternative: the map is hover-only, so screen readers get every count here.
 const summary = computed(() => {
   const list = [...props.cantons].sort((a, b) => b.count - a.count)
-  return 'Map of Switzerland, job ads by canton: ' + list.map((c) => `${c.canton} ${fmtNum(c.count)}`).join(', ')
+  return 'Map of Switzerland, jobs by canton: ' + list.map((c) => `${c.canton} ${fmtNum(c.count)}`).join(', ')
 })
 
 const hoverId = ref<number | null>(null)
@@ -172,13 +172,13 @@ const labelEnd = computed(() => !!labelled.value && labelled.value.cx > width.va
         aria-hidden="true"
         :style="{ left: tip.cx + 'px', top: tip.cy + 'px' }"
       >
-        <template v-if="tip.data"><b>{{ tip.name }}</b> · {{ fmtNum(tip.data.count) }} job ads</template>
+        <template v-if="tip.data"><b>{{ tip.name }}</b> · {{ fmtNum(tip.data.count) }} jobs</template>
         <template v-else><b>{{ tip.name }}</b> · no data yet</template>
       </div>
     </div>
 
     <figcaption class="map-foot">
-      <ul class="legend" aria-label="Job ads per canton">
+      <ul class="legend" aria-label="Jobs per canton">
         <li v-for="l in legend" :key="l.lvl"><span :class="['sw', 'lvl-' + l.lvl]" aria-hidden="true" />{{ l.label }}</li>
         <li><span class="sw no-data" aria-hidden="true" />No data</li>
       </ul>

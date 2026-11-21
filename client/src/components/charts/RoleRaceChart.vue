@@ -32,11 +32,11 @@ const at = (i: number) =>
 const sortedNow = computed(() => [...at(idx.value)].sort((a, b) => descending(a.v, b.v)))
 const monthLabel = computed(() => (months.value[idx.value] ? fmtMonth(months.value[idx.value]!, true) : ''))
 const groupAria = computed(
-  () => `Job ads per role in ${monthLabel.value}: ` + sortedNow.value.map((r) => `${r.label} ${fmtNum(r.v)}`).join(', '),
+  () => `Jobs per role in ${monthLabel.value}: ` + sortedNow.value.map((r) => `${r.label} ${fmtNum(r.v)}`).join(', '),
 )
 const rowAria = (id: string) => {
   const r = at(idx.value).find((x) => x.id === id)
-  return r ? `${r.label}: ${fmtNum(r.v)} job ads in ${monthLabel.value}. Show average salary` : ''
+  return r ? `${r.label}: ${fmtNum(r.v)} jobs in ${monthLabel.value}. Show average salary` : ''
 }
 
 type Row = { id: string; v: number }

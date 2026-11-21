@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RadarLoader from '@/components/ui/RadarLoader.vue'
 import { computed, ref } from 'vue'
 import SkillBars from '@/components/charts/SkillBars.vue'
 import { useSkills, type SkillRow } from '@/composables/useSkills'
@@ -56,10 +57,10 @@ const own = computed(() => {
     </div>
 
     <p class="muted esco-note">
-      ESCO is the EU's official list of skills and jobs. These are the skills from that list that the job ads name.
+      ESCO is the EU's official list of skills and jobs. These are the skills from that list that the jobs mention.
     </p>
 
-    <p v-if="status === 'loading'" class="muted">Loading skills…</p>
+    <RadarLoader v-if="status === 'loading'" label="skills" />
     <p v-else-if="status === 'error'" class="muted">Could not load skills. {{ errorMessage }}</p>
 
     <div v-else class="cards">
@@ -76,7 +77,7 @@ const own = computed(() => {
           <h2 id="own-q" class="q">Not in ESCO</h2>
         </div>
         <SkillBars v-if="own.length" :skills="own" :role-label="roleLabel" :ads="ads" />
-        <p v-else class="muted"><b>No extra tools</b> in these ads.</p>
+        <p v-else class="muted"><b>No extra tools</b> in these jobs.</p>
       </article>
     </div>
   </section>

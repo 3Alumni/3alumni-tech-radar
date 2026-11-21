@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RadarLoader from '@/components/ui/RadarLoader.vue'
 import DataAlerts from '@/components/ui/DataAlerts.vue'
 import { fmtDate, fmtMonth, fmtNum, isExternalUrl } from '@/lib/format'
 import { usePeopleApi } from '@/composables/usePeopleApi'
@@ -20,7 +21,7 @@ function periodLabel(period?: string) {
     <DataAlerts />
 
     <p v-if="error" class="small" role="alert">{{ error }}</p>
-    <p v-else-if="loading" class="small muted">Loading people…</p>
+    <RadarLoader v-else-if="loading" label="people" />
     <div v-else class="groups">
       <section v-for="group in groups" :key="group.title" class="group">
         <h2 class="q">{{ group.title }}</h2>

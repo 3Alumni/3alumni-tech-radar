@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RadarLoader from '@/components/ui/RadarLoader.vue'
 import { computed, onMounted, ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import DataAlerts from '@/components/ui/DataAlerts.vue'
@@ -30,7 +31,7 @@ onMounted(async () => {
     <p v-if="error" class="small" role="alert">{{ error }}</p>
     <CardState :empty="!loading && !policyItems.length">
       <template #empty><b>No policy items yet.</b> Check again after the next data update.</template>
-      <p v-if="loading" class="small muted">Loading policies…</p>
+      <RadarLoader v-if="loading" label="policies" />
       <ol v-else class="tl">
         <li v-for="p in items" :key="p.id" :class="['tl-item', { unread: isUnread(p) }]" @click="markRead(p.id)">
           <p class="small muted">
@@ -42,16 +43,6 @@ onMounted(async () => {
                 <span v-if="isUnread(p)" class="sr">New, unread: </span>{{ p.title }}
               </button>
             </h3>
-            <p v-if="p.title !== p.originalTitle" class="small muted">{{ p.originalTitle }}</p>
-            <p>
-              <template v-if="p.summary">
-                <template v-for="(chunk, i) in parts(p.summary)" :key="i">
-                  <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer" @click="markRead(p.id)">{{ chunk.text }}</a>
-                  <template v-else>{{ chunk.text }}</template>
-                </template>
-              </template>
-              <span v-else class="muted">Writing a short summary…</span>
-            </p>
             <div v-if="p.keyChanges.length" class="points">
               <p class="small"><b>Key changes</b></p>
               <ul>

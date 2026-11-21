@@ -27,7 +27,7 @@ const TREND_WORD = { up: 'rising', down: 'falling', flat: 'steady' } as const
 const x = computed(() => scaleLinear().domain([0, (max(props.skills, (s) => s.sharePct) ?? 1) * 1.1]).range([0, 100]))
 const aria = computed(
   () =>
-    `Share of ${props.roleLabel} ads naming each skill: ` +
+    `Share of ${props.roleLabel} jobs naming each skill: ` +
     props.skills.map((s) => `${s.name} ${s.sharePct} percent${s.trend ? ', ' + TREND_WORD[s.trend] : ''}`).join('; ') +
     (props.highlight ? `. Rising fastest: ${props.highlight}.` : ''),
 )
@@ -51,7 +51,7 @@ const aria = computed(
       </span>
       <span class="tip tip-in">
         <template v-if="s.mentions && ads">Named in {{ s.mentions }} of {{ ads }} published jobs</template>
-        <template v-else>In {{ s.sharePct }}% of {{ roleLabel }} ads</template>
+        <template v-else>In {{ s.sharePct }}% of {{ roleLabel }} jobs</template>
         <template v-if="s.trend"> · {{ TREND_WORD[s.trend] }}</template>{{ s.name === highlight ? ' · rising fastest' : '' }}
       </span>
     </li>

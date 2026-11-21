@@ -13,13 +13,13 @@ const x = computed(() => scaleLinear().domain([0, max(sorted.value, (c) => c.cou
 </script>
 
 <template>
-  <ul class="bars" aria-label="Job ads by canton. Select a canton to filter the page.">
+  <ul class="bars" aria-label="Jobs by canton. Select a canton to filter the page.">
     <li v-for="(c, i) in sorted" :key="c.canton">
       <button
         type="button"
         class="bar-row bar-btn has-tip"
         :aria-pressed="c.canton === selected"
-        :aria-label="`${c.canton}: ${fmtNum(c.count)} job ads. ${c.canton === selected ? 'Selected. Press to show all of Switzerland' : 'Press to show only ' + c.canton}`"
+        :aria-label="`${c.canton}: ${fmtNum(c.count)} jobs. ${c.canton === selected ? 'Selected. Press to show all of Switzerland' : 'Press to show only ' + c.canton}`"
         @click="emit('pick', c.canton)"
       >
         <span class="bar-name">{{ c.canton }}</span>

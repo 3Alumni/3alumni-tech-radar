@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RadarLoader from '@/components/ui/RadarLoader.vue'
 import { computed, ref, watch } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import CantonBars from '@/components/charts/CantonBars.vue'
@@ -61,7 +62,7 @@ const trendSummary = computed(() => {
   const first = points[0]
   const last = points[points.length - 1]
   if (!first || !last || !current.value) return ''
-  return `${current.value.query}, one point per day: ${fmtNum(first.value)} ads on ${first.label}, ${fmtNum(last.value)} ads on ${last.label}`
+  return `${current.value.query}, one point per day: ${fmtNum(first.value)} jobs on ${first.label}, ${fmtNum(last.value)} jobs on ${last.label}`
 })
 
 function toggleRegion(canton: string) {
@@ -73,7 +74,7 @@ function openSalary() {
   if (!trend) return
   salary.openChart({
     title: 'IT Jobs',
-    note: 'Average advertised salary for all IT job ads in Switzerland, not only this role. Source: Adzuna.',
+    note: 'Average advertised salary for all IT jobs in Switzerland, not only this role. Source: Adzuna.',
     points: trend.months.map((month) => ({ month: month.month, chf: month.salary })),
   })
 }
@@ -96,7 +97,7 @@ function openSalary() {
         </div>
       </div>
       <div class="field seg-field">
-        <span id="lang-l" class="label">Language of the ad</span>
+        <span id="lang-l" class="label">Language of the job</span>
         <div class="seg" role="group" aria-labelledby="lang-l">
           <button type="button" :aria-pressed="lang === 'en'" @click="lang = 'en'">English</button>
           <button type="button" :aria-pressed="lang === 'de'" @click="lang = 'de'">German</button>
@@ -104,7 +105,7 @@ function openSalary() {
       </div>
     </div>
 
-    <p v-if="status === 'loading'" class="muted">Loading Adzuna…</p>
+    <RadarLoader v-if="status === 'loading'" label="jobs" />
     <p v-else-if="status === 'error'" class="muted">Could not load demand. {{ errorMessage }}</p>
 
     <div v-else class="cards">
@@ -115,16 +116,17 @@ function openSalary() {
         <div v-if="current" class="kpi">
           <span class="big">{{ fmtNum(kpi) }}</span>
           <span class="muted small kpi-note">
-            {{ region === 'all' ? 'open ads in this search' : 'published jobs in ' + region }}
+            {{ region === 'all' ? 'open jobs in this search' : 'published jobs in ' + region }}
           </span>
-        </div>
-        <p v-if="current && weekDeltaPct != null && priorOpenings != null" class="week">
-          <span :class="weekDeltaPct >= 0 ? 'up' : 'down'">
+          <span
+            v-if="weekDeltaPct != null && priorOpenings != null"
+            :class="[weekDeltaPct >= 0 ? 'up' : 'down', 'kpi-note', 'kpi-push']"
+          >
             <Icon :path="weekDeltaPct >= 0 ? ICON.up : ICON.down" small />
             {{ fmtPct(weekDeltaPct, true) }} vs {{ fmtDate(DEMAND_WEEK_AGO.asOf) }}
           </span>
-        </p>
-        <p v-if="!current" class="muted"><b>No job ads yet</b> for this role and language.</p>
+        </div>
+        <p v-if="!current" class="muted"><b>No jobs yet</b> for this role and language.</p>
         <button type="button" class="btn btn-ghost sal-link" :disabled="!salaryTrend" @click="openSalary">
           Average IT salary, last 12 months<Icon :path="ICON.arrow" small />
         </button>
@@ -134,10 +136,6 @@ function openSalary() {
       <article class="card" aria-labelledby="canton-q">
         <div class="card-head">
           <h2 id="canton-q" class="q">Where are the jobs?</h2>
-          <p v-if="current">
-            Based on {{ current.sampleSize }} published jobs, not all {{ current.openings }}.
-            <template v-if="current.unknownCanton"> {{ current.unknownCanton }} have no canton.</template>
-          </p>
         </div>
         <template v-if="cantons.length">
           <CantonMap :cantons="shownCantons" :selected="region" />
@@ -150,7 +148,11 @@ function openSalary() {
 </template>
 
 <style scoped>
-.filters { display: flex; align-items: flex-end; gap: var(--space-3) var(--space-6); flex-wrap: wrap; }
+/* Same two columns as the cards below: Language starts where the map card starts */
+.filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: var(--space-3) var(--space-4); }
+@media (max-width: 1023px) {
+  .filters { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); }
+}
 .sal-link { align-self: flex-start; margin-left: -12px; }
 .week { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: 0; }
 </style>

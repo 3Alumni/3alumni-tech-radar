@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RadarLoader from '@/components/ui/RadarLoader.vue'
 import { computed, ref, watch } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import { ICON, fmtNum, isExternalUrl } from '@/lib/format'
@@ -38,6 +39,8 @@ const companies = computed(() => {
   return [...direct, ...agencies].sort((a, b) => b.jobs - a.jobs || a.name.localeCompare(b.name))
 })
 const list = computed(() => (showAll.value ? companies.value : companies.value.slice(0, PAGE)))
+// Only show the Tags column when at least one visible row has a tag.
+const hasTags = computed(() => list.value.some((e) => e.agency))
 
 watch(role, () => {
   showAll.value = false
@@ -90,7 +93,7 @@ function tagClass(tag: string) {
       <label class="check"><input v-model="hideAgency" type="checkbox" />Hide agencies</label>
     </fieldset>
 
-    <p v-if="status === 'loading'" class="muted">Loading employers…</p>
+    <RadarLoader v-if="status === 'loading'" label="employers" />
     <p v-else-if="status === 'error'" class="muted">Could not load employers. {{ errorMessage }}</p>
 
     <template v-else>
@@ -99,29 +102,35 @@ function tagClass(tag: string) {
         <span><b>No companies match.</b> Try another role or show agencies.</span>
         <button type="button" class="btn btn-ghost reset" @click="resetFilters">Reset filters</button>
       </div>
-      <table v-else class="tbl cardify">
+      <table v-else :class="['tbl', 'cardify', 'emp-tbl', { 'no-tags': !hasTags }]">
         <caption class="sr">Companies in the published jobs for {{ roleLabel }}</caption>
+        <colgroup>
+          <col class="c-name" />
+          <col class="c-num" />
+          <col v-if="hasTags" class="c-tags" />
+          <col class="c-link" />
+        </colgroup>
         <thead>
           <tr>
             <th scope="col">Company</th>
             <th scope="col">Published jobs</th>
-            <th scope="col">Tags</th>
-            <th scope="col"><span class="sr">Link</span></th>
+            <th v-if="hasTags" scope="col">Tags</th>
+            <th scope="col">Job</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="e in list" :key="e.name">
             <td data-label="Company"><b>{{ e.name }}</b></td>
             <td data-label="Published jobs" class="num">{{ fmtNum(e.jobs) }}</td>
-            <td data-label="Tags">
+            <td v-if="hasTags" data-label="Tags">
               <span class="tags">
                 <span v-for="tag in e.tags" :key="tag" :class="['tag', tagClass(tag)]">{{ tagLabel(tag) }}</span>
                 <span v-if="e.agency" class="tag tag-agency">Agency</span>
               </span>
             </td>
-            <td data-label="Link">
+            <td data-label="Job">
               <a v-if="isExternalUrl(e.url)" class="ext" :href="e.url" target="_blank" rel="noopener noreferrer">
-                Job ad<span class="sr"> for {{ e.name }} (opens in a new tab)</span><Icon :path="ICON.external" small />
+                View job<span class="sr"> for {{ e.name }} (opens in a new tab)</span><Icon :path="ICON.external" small />
               </a>
               <span v-else class="small muted">Link coming</span>
             </td>
@@ -148,6 +157,16 @@ function tagClass(tag: string) {
 .alert { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 16px; border: var(--border) solid; font-size: 14px; line-height: 20px; }
 .al-empty { background: var(--color-bg); border-color: var(--color-border); }
 .reset { margin-left: auto; }
+/* A real table: fixed columns so headers sit exactly over their cells */
+.emp-tbl { table-layout: fixed; max-width: 880px; }
+.emp-tbl th, .emp-tbl td { padding: 14px var(--space-3); }
+.emp-tbl .c-num { width: 160px; }
+.emp-tbl .c-tags { width: 160px; }
+.emp-tbl .c-link { width: 140px; }
+/* Everything after the company name is centred, headers and cells alike */
+.emp-tbl th:not(:first-child), .emp-tbl td:not(:first-child) { text-align: center; }
+.emp-tbl .tags { justify-content: center; }
+.emp-tbl td:first-child { overflow-wrap: anywhere; }
 /* Tags and the job-ad link share one centre line in every row */
 .tbl td { vertical-align: middle; }
 .tbl .tags { align-items: center; min-height: 28px; }
@@ -155,5 +174,8 @@ function tagClass(tag: string) {
 .tbl .ext { display: inline-flex; align-items: center; min-height: 28px; vertical-align: middle; }
 @media (max-width: 639px) {
   .tbl.cardify td { align-items: center; }
+  /* Stacked cards: label left, value left — centring only makes sense in columns */
+  .emp-tbl td:not(:first-child) { text-align: left; }
+  .emp-tbl .tags { justify-content: flex-start; }
 }
 </style>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RadarLoader from '@/components/ui/RadarLoader.vue'
 import { computed, ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import { ICON, fmtDate, fmtNum, fmtPct } from '@/lib/format'
@@ -64,7 +65,7 @@ function openSalary() {
   if (!trend) return
   salary.openChart({
     title: 'IT Jobs',
-    note: 'Average advertised salary for all IT job ads in Switzerland, not only this role. Source: Adzuna.',
+    note: 'Average advertised salary for all IT jobs in Switzerland, not only this role. Source: Adzuna.',
     points: trend.months.map((month) => ({ month: month.month, chf: month.salary })),
   })
 }
@@ -89,7 +90,7 @@ function openSalary() {
         </div>
       </div>
       <div class="field seg-field">
-        <span id="ov-lang-l" class="label">Language of the ad</span>
+        <span id="ov-lang-l" class="label">Language of the job</span>
         <div class="seg" role="group" aria-labelledby="ov-lang-l">
           <button type="button" :aria-pressed="lang === 'en'" @click="lang = 'en'">English</button>
           <button type="button" :aria-pressed="lang === 'de'" @click="lang = 'de'">German</button>
@@ -97,12 +98,12 @@ function openSalary() {
       </div>
     </div>
 
-    <p v-if="status === 'loading'" class="muted">Loading Adzuna…</p>
+    <RadarLoader v-if="status === 'loading'" label="jobs" />
     <p v-else-if="status === 'error'" class="muted">Could not load overview. {{ errorMessage }}</p>
 
     <div v-else class="tiles">
       <button type="button" class="tile" @click="go('demand')">
-        <span class="small muted">Open job ads</span>
+        <span class="small muted">Open jobs</span>
         <span class="tile-v">{{ fmtNum(kpiShown) }}</span>
         <span v-if="weekDeltaPct != null" :class="weekDeltaPct >= 0 ? 'up' : 'down'">
           <Icon :path="weekDeltaPct >= 0 ? ICON.up : ICON.down" small />
@@ -152,7 +153,7 @@ function openSalary() {
 
       <article class="card c-12" aria-labelledby="newpol-q">
         <div class="card-head"><h2 id="newpol-q" class="q">Newest policy items</h2></div>
-        <p v-if="policyLoading" class="small muted">Loading policies…</p>
+        <RadarLoader v-if="policyLoading" label="policies" compact />
         <p v-else-if="!policyTop.length" class="muted"><b>No policy items yet.</b></p>
         <ul v-else class="mini-list pol-list">
           <li v-for="p in policyTop" :key="p.id">

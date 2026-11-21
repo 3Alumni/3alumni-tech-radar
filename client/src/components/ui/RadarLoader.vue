@@ -4,11 +4,11 @@
  * rings + crosshair, a red sweep rotating every 1.4 s, three blips fading in turn.
  * Reduced motion: static sweep, blips visible.
  */
-defineProps<{ label: string }>()
+withDefaults(defineProps<{ label?: string; text?: string; compact?: boolean }>(), { label: '', text: '', compact: false })
 </script>
 
 <template>
-  <div class="loader" role="status" aria-live="polite">
+  <div :class="['loader', { compact }]" role="status" aria-live="polite">
     <svg viewBox="0 0 200 200" aria-hidden="true" focusable="false">
       <circle class="disc" cx="100" cy="100" r="96" />
       <circle class="ring" cx="100" cy="100" r="72" />
@@ -25,7 +25,7 @@ defineProps<{ label: string }>()
       <circle class="blip b3" cx="140" cy="138" r="4" />
       <circle class="hub" cx="100" cy="100" r="4" />
     </svg>
-    <p class="text">Loading {{ label }}…</p>
+    <p class="text">{{ text || `Loading ${label}…` }}</p>
   </div>
 </template>
 
@@ -53,6 +53,10 @@ svg { width: 240px; height: 240px; }
 @media (max-width: 639px) {
   svg { width: 180px; height: 180px; }
 }
+/* Inside a card: small radar, no page-height block */
+.loader.compact { flex: none; min-height: 0; padding: var(--space-4) 0; gap: var(--space-2); background: transparent; }
+.loader.compact svg { width: 88px; height: 88px; }
+.loader.compact .text { font-size: 14px; line-height: 20px; }
 /* The global reduced-motion rule stops the animations; keep the blips visible so the radar still reads. */
 @media (prefers-reduced-motion: reduce) {
   .blip { opacity: 1; }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RadarLoader from '@/components/ui/RadarLoader.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import { ICON, fmtDate, fmtMonth, listJoin } from '@/lib/format'
@@ -99,7 +100,7 @@ const points = computed(() => {
   const firstSkill = ins.skills.value[0]
   const firstPolicy = ins.policySorted.value[0]
   if (form.demand)
-    out.push({ h: 'Demand', t: `${ins.roleLabel.value} job ads ${ins.changeText.value}.${top ? ' Most ads are in ' + top.canton + '.' : ''}`, src: 'Adzuna', d: srcDate('Adzuna') })
+    out.push({ h: 'Demand', t: `${ins.roleLabel.value} jobs ${ins.changeText.value}.${top ? ' Most jobs are in ' + top.canton + '.' : ''}`, src: 'Adzuna', d: srcDate('Adzuna') })
   if (form.skills && firstSkill)
     out.push({ h: 'Skills', t: `${firstSkill.name} is the most requested skill. ${ins.risingSkill.value} climbed the most.`, src: 'ESCO + Adzuna', d: srcDate('ESCO', 'Adzuna') })
   if (form.employers)
@@ -198,7 +199,7 @@ function submit() {
         <div class="mail">
           <div class="mail-head"><b>{{ topicId ? topicTitle : subject }}</b></div>
           <div v-if="topicId" class="mail-body">
-            <p v-if="topicLoading" class="muted">Writing the summary…</p>
+            <RadarLoader v-if="topicLoading" text="Writing the summary…" compact />
             <p v-else-if="topicError" class="small" role="alert">{{ topicError }}</p>
             <template v-else-if="briefing">
               <p>

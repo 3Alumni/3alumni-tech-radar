@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import RadarLoader from '@/components/ui/RadarLoader.vue'
 import { onMounted, ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import DataAlerts from '@/components/ui/DataAlerts.vue'
@@ -19,7 +20,7 @@ interface ApiSource {
 const PURPOSE: Record<string, string> = {
   sem: 'Residence status, asylum and foreign-resident figures',
   fedlex: 'Laws and ordinances on asylum, status F and integration',
-  adzuna: 'Job ads for IT roles',
+  adzuna: 'IT jobs',
   bfs: 'Labour-market statistics',
   esco: 'Skill names',
 }
@@ -75,15 +76,21 @@ function updated(source: ApiSource) {
     <p v-if="error" class="small" role="alert">{{ error }}</p>
     <CardState :empty="!loading && !sources.length">
       <template #empty><b>No sources listed yet.</b></template>
-      <p v-if="loading" class="small muted">Loading sources…</p>
-      <table v-else class="tbl cardify">
+      <RadarLoader v-if="loading" label="sources" />
+      <table v-else class="tbl cardify src-tbl">
         <caption class="sr">Data sources used in Market Radar</caption>
+        <colgroup>
+          <col class="c-name" />
+          <col class="c-what" />
+          <col class="c-used" />
+          <col class="c-date" />
+        </colgroup>
         <thead>
           <tr>
             <th scope="col">Source</th>
             <th scope="col">What for</th>
-            <th scope="col">Used in</th>
-            <th scope="col">Updated</th>
+            <th scope="col" class="center">Used in</th>
+            <th scope="col" class="center">Updated</th>
           </tr>
         </thead>
         <tbody>
@@ -95,10 +102,9 @@ function updated(source: ApiSource) {
               <b v-else>{{ s.title }}</b>
             </td>
             <td data-label="What for">{{ PURPOSE[s.id] ?? s.id }}</td>
-            <td data-label="Used in">{{ usedIn(s.questions) }}</td>
-            <td data-label="Updated" class="num">
+            <td data-label="Used in" class="center">{{ usedIn(s.questions) }}</td>
+            <td data-label="Updated" class="num center">
               {{ updated(s) }}
-              <span v-if="s.metricCount" class="small muted"><br />{{ s.metricCount }} figures</span>
             </td>
           </tr>
         </tbody>
@@ -113,4 +119,17 @@ function updated(source: ApiSource) {
 .view { gap: var(--space-4); }
 .rule { display: flex; align-items: center; gap: var(--space-2); }
 .rule .ico { color: var(--color-success); }
+
+/* Same table design as Employers: fixed columns, 880 px max, short columns centred */
+.src-tbl { table-layout: fixed; max-width: 880px; }
+.src-tbl th, .src-tbl td { padding: 14px var(--space-3); vertical-align: middle; }
+.src-tbl .c-name { width: 220px; }
+.src-tbl .c-used { width: 170px; }
+.src-tbl .c-date { width: 130px; }
+.src-tbl .center { text-align: center; }
+.src-tbl td:first-child { overflow-wrap: anywhere; }
+.src-tbl .ext { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 639px) {
+  .src-tbl .center { text-align: left; }
+}
 </style>

@@ -38,10 +38,10 @@ export function useInsights() {
   )
   const kpiAnswer = computed(() =>
     kpiValue.value === 0
-      ? 'Not right now: there are no open job ads for this role and region.'
+      ? 'Not right now: there are no open jobs for this role and region.'
       : changeUp.value
-        ? `Yes. Job ads rose ${changeShort.value} over the last 3 months.`
-        : `Yes, but fewer than before: job ads fell ${Math.abs(change.value)}% over the last 3 months.`,
+        ? `Yes. Jobs rose ${changeShort.value} over the last 3 months.`
+        : `Yes, but fewer than before: jobs fell ${Math.abs(change.value)}% over the last 3 months.`,
   )
   const cantonsSorted = computed(() =>
     [...(f.currentRole.value?.adsByCanton ?? [])].sort((a, b) => descending(a.count, b.count)),
@@ -50,7 +50,7 @@ export function useInsights() {
   const cantonAnswer = computed(() => {
     const [a, b] = cantonsSorted.value
     if (!a) return 'No canton data yet.'
-    return `Most ads are in ${a.canton}${b ? ', then ' + b.canton : ''}. Click a canton to filter.`
+    return `Most jobs are in ${a.canton}${b ? ', then ' + b.canton : ''}. Click a canton to filter.`
   })
   const trendPoints = computed(() =>
     (f.currentRole.value?.adsByMonth ?? []).map((m) => ({
@@ -63,7 +63,7 @@ export function useInsights() {
   const trendAria = computed(() => {
     const p = trendPoints.value
     if (!p.length) return ''
-    return `${f.roleLabel.value} job ads per month in Switzerland, ${fmtMonth(p[0]!.key, true)} to ${fmtMonth(p[p.length - 1]!.key, true)}: from ${fmtNum(p[0]!.value)} to ${fmtNum(p[p.length - 1]!.value)}`
+    return `${f.roleLabel.value} jobs per month in Switzerland, ${fmtMonth(p[0]!.key, true)} to ${fmtMonth(p[p.length - 1]!.key, true)}: from ${fmtNum(p[0]!.value)} to ${fmtNum(p[p.length - 1]!.value)}`
   })
 
   // Role race
@@ -80,8 +80,8 @@ export function useInsights() {
     const fastest = [...rs].sort((a, b) => descending(a.growth, b.growth))[0]!
     const since = fmtMonth(roles.value[0]!.adsByMonth[0]!.month, true).split(' ')[0]
     return top.label === fastest.label
-      ? `${top.label} has the most job ads and grew fastest since ${since}.`
-      : `${top.label} has the most job ads. ${fastest.label} grew fastest since ${since}.`
+      ? `${top.label} has the most jobs and grew fastest since ${since}.`
+      : `${top.label} has the most jobs. ${fastest.label} grew fastest since ${since}.`
   })
 
   // Skills

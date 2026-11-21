@@ -23,7 +23,7 @@ const width = useElementWidth(box)
 const reduced = useReducedMotion()
 const count = computed(() => props.points.length)
 const { active, onKey, onFocus, onBlur, hover } = useActiveIndex(count)
-const unitText = computed(() => props.unit ?? 'job ads')
+const unitText = computed(() => props.unit ?? 'jobs')
 
 const x = computed(() =>
   scalePoint<string>().domain(props.points.map((p) => p.key)).range([0, Math.max(width.value, 1)]).padding(0.5),
@@ -57,6 +57,17 @@ const calloutSide = computed(() => {
   const fx = focusPt.value?.x ?? 0
   return fx > width.value - 70 ? 'end' : fx < 70 ? 'start' : 'mid'
 })
+// Hide value labels that would sit under the callout box above the focused point.
+// Label text box ≈ (v.y-28 … v.y-10); callout box ≈ (f.y-56 … f.y-14), ~170 px wide.
+function underCallout(v: { x: number; y: number }) {
+  const f = focusPt.value
+  if (!f) return false
+  const w = 170
+  const left = calloutSide.value === 'end' ? f.x - w + 18 : calloutSide.value === 'start' ? f.x - 18 : f.x - w / 2
+  const overlapX = v.x > left - 24 && v.x < left + w + 24
+  const overlapY = v.y - 10 > f.y - 56 && v.y - 28 < f.y - 14
+  return overlapX && overlapY
+}
 
 let first = true
 // Markers only animate between data states, never from the empty first layout.
@@ -136,7 +147,7 @@ onBeforeUnmount(() => {
           v-for="v in valueLabels"
           :key="v.key"
           class="vlabel"
-          :style="{ transform: `translate(${v.x}px, ${v.y}px)`, opacity: v.i === focusIdx ? 0 : 1 }"
+          :style="{ transform: `translate(${v.x}px, ${v.y}px)`, opacity: v.i === focusIdx || underCallout(v) ? 0 : 1 }"
         >
           <circle r="3.5" class="vdot" />
           <text y="-12" text-anchor="middle">{{ v.text }}</text>
