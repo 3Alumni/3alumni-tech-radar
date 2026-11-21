@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Market Radar · clickable prototype</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+*{box-sizing:border-box;border-radius:0}
+.stage{background:#D9D9D7}
+.wf{container-type:inline-size;container-name:page;position:relative;margin:0 auto;background:#F6F6F5;color:#343534;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:16px;line-height:24px;-webkit-font-smoothing:antialiased}
+.wf h1,.wf h2,.wf h3,.wf p,.wf ul,.wf ol{margin:0}
+.wf ul,.wf ol{padding:0;list-style:none}
+.wf [id]{scroll-margin-top:88px}
+a{color:#B23149;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+a:hover{color:#8E2639;text-decoration-thickness:2px}
+a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #343534;outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-9999px;top:8px;z-index:30;background:#FFFFFF;padding:10px 16px;border:3px solid #343534;font-weight:600}
+.skip:focus{left:16px}
+.ico{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:square}
+.ico-s{width:16px;height:16px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 64px}
+.main{display:flex;flex-direction:column}
+.muted{color:#5E5F5D}
+.small{font-size:14px;line-height:20px}
+.sec{padding:64px 0}
+.sec-head{display:flex;flex-direction:column;gap:4px;margin-bottom:32px}
+.h1{font-size:32px;line-height:40px;font-weight:700}
+.h2{font-size:24px;line-height:32px;font-weight:700}
+.q{font-size:18px;line-height:24px;font-weight:700}
+
+/* tooltip (hover + keyboard focus) */
+.has-tip{position:relative}
+.tip{position:absolute;z-index:8;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);background:#343534;color:#FFFFFF;font-size:14px;line-height:20px;font-weight:400;padding:6px 10px;white-space:nowrap;pointer-events:none;opacity:0;visibility:hidden;transition:opacity .12s ease}
+.tip::after{content:"";position:absolute;top:100%;left:50%;margin-left:-5px;border:5px solid transparent;border-top-color:#343534}
+.tip b{font-weight:700}
+.tip-b{bottom:auto;top:calc(100% + 10px)}
+.tip-b::after{top:auto;bottom:100%;border-top-color:transparent;border-bottom-color:#343534}
+.tip-r{left:auto;right:0;transform:none}
+.tip-r::after{left:auto;right:12px}
+.has-tip:hover > .tip,.has-tip:focus-visible > .tip,.has-tip:hover .tip-in,.has-tip:focus-visible .tip-in{opacity:1;visibility:visible}
+
+/* header (sticky) */
+.hdr{position:sticky;top:0;z-index:20;background:#FFFFFF;border-bottom:1px solid #D9D9D7}
+.hdr .wrap{display:flex;align-items:center;gap:32px;min-height:72px}
+.brand{display:flex;align-items:center;gap:16px;color:#343534;text-decoration:none}
+.brand:hover{color:#343534}
+.brand img{width:168px;height:auto;display:block}
+.brand-name{font-size:18px;font-weight:700;white-space:nowrap}
+.vr{width:1px;height:24px;background:#D9D9D7;flex:none}
+.nav{display:flex;gap:28px}
+.nav a{display:flex;align-items:center;min-height:72px;padding-top:3px;border-bottom:3px solid transparent;font-weight:600;color:#5E5F5D;text-decoration:none;white-space:nowrap;transition:color .12s,border-color .12s}
+.nav a:hover{color:#343534;border-bottom-color:#D9D9D7}
+.nav a[aria-current="true"]{color:#343534;border-bottom-color:#B23149}
+.hdr-end{margin-left:auto;display:flex;align-items:center;gap:16px}
+.menu-btn{display:none}
+.mnav{display:none}
+
+/* controls */
+.btn{min-height:44px;padding:0 20px;display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-size:16px;font-weight:600;line-height:1;border:1px solid transparent;text-decoration:none;cursor:pointer;white-space:nowrap;transition:background-color .12s,border-color .12s}
+.btn-primary{background:#B23149;border-color:#B23149;color:#FFFFFF}
+.btn-primary:hover{background:#8E2639;border-color:#8E2639;color:#FFFFFF;text-decoration:none}
+.btn-secondary{background:#FFFFFF;border-color:#343534;color:#343534}
+.btn-secondary:hover{background:#F6F6F5;color:#343534}
+.btn-ghost{background:transparent;border-color:transparent;color:#B23149;padding:0 12px}
+.btn-ghost:hover{background:#F8EBEE;color:#8E2639}
+.icon-btn{width:44px;height:44px;flex:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid #767775;background:#FFFFFF;color:#343534;text-decoration:none;transition:background-color .12s}
+.icon-btn:hover{background:#F6F6F5;color:#343534}
+.badge{position:absolute;top:-10px;right:-10px;min-width:22px;height:22px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;background:#B23149;color:#FFFFFF;font-size:14px;line-height:1;font-weight:700}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.label{font-size:14px;line-height:20px;font-weight:600}
+.input{height:44px;width:100%;border:1px solid #767775;background:#FFFFFF;padding:0 12px;font-family:inherit;font-size:16px;color:#343534;-webkit-appearance:none;appearance:none;transition:border-color .12s}
+.input:hover{border-color:#343534}
+.input::placeholder{color:#5E5F5D}
+.input[aria-invalid="true"]{border:2px solid #8E2639}
+.sel{position:relative}
+.sel .input{padding-right:40px;cursor:pointer}
+.sel .ico{position:absolute;right:12px;top:12px;pointer-events:none}
+.seg{display:flex}
+.seg button{min-height:44px;padding:0 20px;font-family:inherit;font-size:16px;font-weight:600;background:#FFFFFF;color:#343534;border:1px solid #767775;margin-left:-1px;cursor:pointer;transition:background-color .12s}
+.seg button:first-child{margin-left:0}
+.seg button:hover{background:#F6F6F5}
+.seg button[aria-pressed="true"]{background:#F8EBEE;border-color:#B23149;color:#8E2639;position:relative;z-index:1;box-shadow:inset 0 -3px 0 #B23149}
+.role-sel{display:none}
+.filters{display:flex;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.check{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer}
+.check input{width:20px;height:20px;margin:0;accent-color:#B23149;flex:none;cursor:pointer}
+.check:hover{color:#000000}
+.checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 24px;border:0;padding:0;margin:0;min-width:0}
+.checks legend{font-size:14px;line-height:20px;font-weight:600;padding:0;margin-bottom:4px}
+.err{display:flex;gap:6px;align-items:flex-start;font-size:14px;line-height:20px;color:#8E2639;font-weight:600}
+
+/* tags, chips, alerts */
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{display:inline-flex;align-items:center;min-height:28px;padding:0 8px;font-size:14px;font-weight:600;border:1px solid;white-space:nowrap}
+.tag-junior{background:#EAF3ED;border-color:#1F6B3E;color:#1F6B3E}
+.tag-partner{background:#F8EBEE;border-color:#B23149;color:#8E2639}
+.tag-agency{background:#F6F6F5;border-color:#767775;color:#5E5F5D}
+.tag-new{background:#B23149;border-color:#B23149;color:#FFFFFF}
+.tag-sample{background:#FFFFFF;border-color:#767775;color:#5E5F5D;cursor:help}
+.imp-high{background:#F8EBEE;border-color:#8E2639;color:#8E2639}
+.imp-medium{background:#FBF3E2;border-color:#7A4F00;color:#7A4F00}
+.imp-low{background:#F6F6F5;border-color:#767775;color:#5E5F5D}
+.chip{display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px;align-self:flex-start;min-height:32px;padding:6px 10px;border:1px solid #D9D9D7;background:#FFFFFF;font-size:14px;line-height:20px;transition:border-color .12s}
+.chip:hover{border-color:#767775}
+.chip .sep{color:#767775}
+.dot{width:8px;height:8px;flex:none}
+.dot-fresh{background:#1F6B3E}
+.dot-old{background:#7A4F00}
+.alert{display:flex;gap:10px;align-items:flex-start;padding:12px 16px;border:1px solid;font-size:14px;line-height:20px;color:#343534}
+.al-warn{background:#FBF3E2;border-color:#7A4F00}
+.al-warn .ico{color:#7A4F00}
+.al-err{background:#F8EBEE;border-color:#8E2639}
+.al-err .ico{color:#8E2639}
+.al-ok{background:#EAF3ED;border-color:#1F6B3E}
+.al-ok .ico{color:#1F6B3E}
+.al-empty{background:#F6F6F5;border-color:#D9D9D7}
+.skel-box{display:flex;flex-direction:column;gap:12px;padding:8px 0}
+.skel{background:#D9D9D7;height:14px}
+
+/* intro + strip */
+.lead{font-size:18px;line-height:28px;color:#5E5F5D;max-width:680px}
+.intro{display:flex;flex-direction:column;gap:24px}
+.filters-row{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.strip-in{display:flex;align-items:center;gap:12px 32px;flex-wrap:wrap;background:#FFFFFF;border:1px solid #D9D9D7;min-height:64px;padding:12px 24px}
+.strip-k{font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5E5F5D}
+.strip-a{display:inline-flex;align-items:center;gap:8px;color:#343534;text-decoration:none;min-height:40px;border-bottom:2px solid transparent;transition:border-color .12s}
+.strip-a:hover{color:#343534;border-bottom-color:#B23149}
+
+/* cards */
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.span-2{grid-column:1 / -1}
+.card{background:#FFFFFF;border:1px solid #D9D9D7;padding:24px;display:flex;flex-direction:column;gap:16px;min-width:0;transition:border-color .15s}
+.card:hover{border-color:#767775}
+.card-head{display:flex;flex-direction:column;gap:4px}
+.card-foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:auto}
+.kpi{display:flex;align-items:flex-end;flex-wrap:wrap;gap:8px 16px}
+.big{font-size:40px;line-height:48px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.up{display:inline-flex;align-items:center;gap:4px;font-size:14px;line-height:20px;font-weight:700;color:#1F6B3E}
+.down{display:inline-flex;align-items:center;gap:4px;font-size:14px;line-height:20px;font-weight:700;color:#5E5F5D}
+
+/* trend line with hover points */
+.trend{position:relative;height:96px}
+.trend svg{position:absolute;left:0;right:0;top:0;width:100%;height:96px;display:block}
+.trend-hit{position:absolute;inset:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.pt{position:relative;cursor:crosshair}
+.pt-line{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#767775;opacity:0;transition:opacity .1s}
+.pt-dot{position:absolute;left:50%;width:10px;height:10px;margin:-5px 0 0 -5px;background:#FFFFFF;border:2px solid #B23149;opacity:0;transition:opacity .1s}
+.pt-dot.last{opacity:1;background:#B23149}
+.pt:hover .pt-line,.pt:hover .pt-dot{opacity:1}
+.pt .tip{bottom:auto;top:-44px}
+.months{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));text-align:center;font-size:14px;line-height:20px;color:#5E5F5D;margin-top:4px}
+
+/* bar race */
+.race-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.race-month{font-size:24px;line-height:32px;font-weight:700;font-variant-numeric:tabular-nums}
+.race{display:flex;flex-direction:column;gap:8px}
+.race-row{display:grid;grid-template-columns:140px minmax(0,1fr);gap:12px;align-items:center;padding:4px 0;transition:opacity .15s}
+.race:hover .race-row{opacity:.45}
+.race:hover .race-row:hover{opacity:1}
+.race-name{font-weight:600}
+.race-track{display:flex;align-items:center;gap:8px;height:32px}
+.race-fill{position:relative;height:32px;background:#5E5F5D;transition:width .7s ease}
+.race-fill.sel{background:#B23149}
+.race-fill .tip{left:100%}
+.race-val{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* bars */
+.bars{display:flex;flex-direction:column;gap:2px}
+.bar-row{display:grid;grid-template-columns:150px minmax(0,1fr) 72px;gap:12px;align-items:center;min-height:36px;padding:0 8px;margin:0 -8px;font-size:15px;transition:background-color .12s,opacity .15s}
+.bars-dim:hover .bar-row{opacity:.45}
+.bars-dim:hover .bar-row:hover{opacity:1}
+.bar-btn{width:calc(100% + 16px);font-family:inherit;color:#343534;text-align:left;background:transparent;border:0;cursor:pointer}
+.bar-btn:hover{background:#F6F6F5}
+.bar-btn[aria-pressed="true"]{background:#F8EBEE}
+.bar-btn[aria-pressed="true"] .bar-name{color:#8E2639;font-weight:700}
+.bar-track{height:12px;background:#F6F6F5}
+.bar-btn:hover .bar-track{background:#FFFFFF}
+.bar-fill{position:relative;height:12px;background:#5E5F5D;transition:width .5s ease}
+.bar-fill.sel{background:#B23149}
+.bar-fill .tip{left:100%}
+.bar-val{display:flex;align-items:center;justify-content:flex-end;gap:4px;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.tr-up{color:#1F6B3E}
+.tr-down{color:#5E5F5D}
+.tr-flat{color:#5E5F5D}
+@media (prefers-reduced-motion: reduce){.race-fill,.bar-fill,.tip,.race-row,.bar-row{transition:none}}
+
+/* clickable race rows */
+.race-btn{width:calc(100% + 16px);margin:0 -8px;padding:4px 8px;font:inherit;color:#343534;text-align:left;background:transparent;border:0;cursor:pointer;transition:background-color .12s,opacity .15s}
+.race-btn:hover{background:#F6F6F5}
+.race-btn:hover .race-name{color:#B23149;text-decoration:underline;text-underline-offset:3px}
+
+/* salary overlay */
+.ovl{position:fixed;inset:0;z-index:40;background:rgba(52,53,52,.6)}
+.dlg{position:fixed;z-index:41;top:50%;left:50%;transform:translate(-50%,-50%);width:min(640px,calc(100% - 32px));max-height:calc(100% - 32px);overflow:auto;background:#FFFFFF;border:1px solid #343534;padding:32px;display:flex;flex-direction:column;gap:24px}
+.dlg-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.dlg .seg{flex-wrap:wrap}
+.cols{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px;align-items:end;height:180px;border-bottom:1px solid #D9D9D7}
+.col{position:relative;height:100%;display:flex;align-items:flex-end;cursor:crosshair;transition:opacity .15s}
+.cols:hover .col{opacity:.45}
+.cols:hover .col:hover{opacity:1}
+.col-bar{display:block;width:100%;background:#5E5F5D}
+.col-bar.sel{background:#B23149}
+.col .tip{bottom:auto;top:-8px}
+.col .tip-l{left:0;transform:none}
+.col .tip-l::after{left:12px}
+.col-months{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px;text-align:center;font-size:14px;line-height:20px;color:#5E5F5D;margin-top:4px}
+
+/* tables */
+.tbl-box{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;background:#FFFFFF;border:1px solid #D9D9D7}
+.tbl th{text-align:left;font-size:14px;line-height:20px;font-weight:600;color:#5E5F5D;padding:12px 16px;border-bottom:1px solid #343534}
+.tbl td{padding:14px 16px;border-bottom:1px solid #D9D9D7;vertical-align:middle;transition:background-color .12s}
+.tbl tbody tr:hover td{background:#F6F6F5}
+.tbl.compact td{padding:10px 16px}
+.num{font-variant-numeric:tabular-nums}
+.ext{display:inline-flex;align-items:center;gap:6px}
+
+/* policy */
+.pol-bar{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.tl{border-top:1px solid #343534}
+.tl-item{display:grid;grid-template-columns:160px minmax(0,1fr);gap:16px;padding:20px 16px;margin:0 -16px;border-bottom:1px solid #D9D9D7;transition:background-color .12s}
+.tl-item:hover{background:#FFFFFF}
+.tl-body{display:flex;flex-direction:column;gap:8px;min-width:0}
+
+/* subscribe */
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.panel{background:#FFFFFF;border:1px solid #D9D9D7;padding:24px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.mail{border:1px solid #767775;background:#FFFFFF;display:flex;flex-direction:column}
+.mail-head{padding:12px 16px;border-bottom:1px solid #D9D9D7;background:#F6F6F5;font-size:14px;line-height:20px}
+.mail-body{padding:16px;display:flex;flex-direction:column;gap:16px}
+.mail-pt{display:flex;flex-direction:column;gap:4px;padding-bottom:16px;border-bottom:1px solid #D9D9D7}
+
+/* sources */
+.rules{display:flex;flex-wrap:wrap;gap:8px 24px}
+.rules li{display:flex;align-items:center;gap:8px}
+.rules .ico{color:#1F6B3E}
+.how{background:#FFFFFF;border:1px solid #D9D9D7;padding:0 16px;transition:border-color .12s}
+.how:hover{border-color:#767775}
+.how summary{min-height:48px;display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;color:#B23149}
+.how summary:hover{color:#8E2639}
+.how ol{list-style:decimal;padding:0 0 16px 20px;display:flex;flex-direction:column;gap:6px}
+
+/* footer */
+.ftr{background:#FFFFFF;border-top:1px solid #D9D9D7;padding:32px 0}
+.ftr-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px 32px}
+.ftr-links{display:flex;flex-wrap:wrap;gap:8px 24px}
+.ftr-base{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 24px;border-top:1px solid #D9D9D7;margin-top:24px;padding-top:16px}
+
+/* tablet and below */
+@container page (max-width: 1023px){
+  .wrap{padding:0 32px}
+  .nav{display:none}
+  .menu-btn{display:inline-flex}
+  .mnav{display:block;border-top:1px solid #D9D9D7}
+  .mnav ul{display:flex;flex-direction:column;padding:8px 0}
+  .mnav a{display:flex;align-items:center;min-height:48px;font-weight:600;color:#343534;text-decoration:none;border-bottom:1px solid #D9D9D7}
+  .mnav a:hover{color:#B23149}
+  .mnav li:last-child a{border-bottom:0}
+  .cards,.split{grid-template-columns:minmax(0,1fr)}
+}
+/* mobile */
+@container page (max-width: 639px){
+  .wrap{padding:0 16px}
+  .sec{padding:40px 0}
+  .hdr .wrap{min-height:64px;gap:12px}
+  .brand{gap:0}
+  .brand img{width:120px}
+  .brand .vr,.brand-name,.sub-btn{display:none}
+  .h1{font-size:24px;line-height:32px}
+  .lead{font-size:16px;line-height:24px}
+  .seg-field{display:none}
+  .role-sel{display:flex}
+  .filters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:100%}
+  .filters .field{width:auto}
+  .strip{order:1}
+  .after{order:2}
+  .strip-in{flex-direction:column;align-items:flex-start;gap:4px;padding:16px}
+  .strip-in .vr{display:none}
+  .card,.panel{padding:16px}
+  .race-row{grid-template-columns:minmax(0,1fr);gap:4px}
+  .bar-row{grid-template-columns:100px minmax(0,1fr) 64px;gap:8px;font-size:14px}
+  .checks{grid-template-columns:minmax(0,1fr)}
+  .tl-item{grid-template-columns:minmax(0,1fr);gap:4px}
+  .dlg{padding:16px;gap:16px}
+  .dlg .seg button{padding:0 12px;font-size:14px}
+  .cols,.col-months{gap:2px}
+  .col-months{font-size:12px}
+  .tbl.cardify{border:0;background:transparent}
+  .tbl.cardify thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .tbl.cardify tbody,.tbl.cardify tr,.tbl.cardify td{display:block;width:100%}
+  .tbl.cardify tr{background:#FFFFFF;border:1px solid #D9D9D7;padding:8px 16px;margin-bottom:12px}
+  .tbl.cardify td{display:grid;grid-template-columns:100px minmax(0,1fr);gap:8px;padding:4px 0;border:0}
+  .tbl.cardify td::before{content:attr(data-label);font-size:14px;font-weight:600;color:#5E5F5D}
+  .tbl.cardify tbody tr:hover td{background:transparent}
+}
+/* ===== dashboard layout ===== */
+.side-brand{display:flex;justify-content:flex-end}
+.side-logo{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left}
+.side-logo img{width:150px;height:auto;display:block}
+.side-logo .brand-name{font-size:18px;line-height:24px;font-weight:700;color:#343534}
+.side.collapsed .side-brand{justify-content:center}
+.side.collapsed .side-logo{display:none}
+.hdr{position:sticky;top:0;z-index:30;background:#FFFFFF;border-bottom:1px solid #D9D9D7}
+.hdr-in{display:flex;align-items:center;gap:24px;min-height:72px;padding:0 24px}
+button.brand{background:transparent;border:0;padding:0;font:inherit;cursor:pointer}
+.hdr-end{margin-left:auto;display:flex;align-items:center;gap:16px}
+.hdr .icon-btn{position:relative;cursor:pointer}
+.wf{display:flex;flex-direction:column;min-height:100vh}
+.shell{flex:1;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:stretch}
+.side{position:relative;width:264px;background:#FFFFFF;border-right:1px solid #D9D9D7;z-index:20;transition:width .2s ease}
+.side-in{position:sticky;top:73px;display:flex;flex-direction:column;gap:8px;padding:16px 12px}
+.side.collapsed{width:72px}
+.side-toggle,.side-close{align-self:flex-end;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:1px solid transparent;color:#5E5F5D;cursor:pointer}
+.side-toggle:hover,.side-close:hover{background:#F6F6F5;color:#343534}
+.side.collapsed .side-toggle{align-self:center}
+.side-close{display:none}
+.side-list{display:flex;flex-direction:column;gap:4px}
+.side-link{position:relative;width:100%;display:flex;align-items:center;gap:12px;min-height:48px;padding:0 12px;border:0;background:transparent;font:inherit;font-weight:600;color:#5E5F5D;text-align:left;cursor:pointer;transition:background-color .12s,color .12s}
+.side-link:hover{background:#F6F6F5;color:#343534}
+.side-link[aria-current="page"]{background:#F8EBEE;color:#8E2639}
+.side-badge{margin-left:auto;min-width:22px;height:22px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;background:#B23149;color:#FFFFFF;font-size:14px;line-height:1;font-weight:700}
+.side.collapsed .side-link{justify-content:center;padding:0}
+.side.collapsed .side-label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.side.collapsed .side-badge{position:absolute;top:4px;right:6px;min-width:18px;height:18px;padding:0 4px;font-size:12px}
+.tip-side{bottom:auto;top:50%;left:calc(100% + 12px);transform:translateY(-50%);display:none}
+.tip-side::after{top:50%;left:auto;right:100%;margin:-5px 0 0;border-top-color:transparent;border-right-color:#343534}
+.side.collapsed .tip-side{display:block}
+.side-foot{margin-top:24px;display:flex;flex-direction:column;gap:12px;padding-top:16px;border-top:1px solid #D9D9D7}
+.side-cta{position:relative;width:100%;justify-content:center}
+.side.collapsed .side-cta{padding:0}
+.content{flex:1;min-width:0;padding:40px 48px 64px}
+.content .wrap{max-width:none;margin:0;padding:0}
+.view{display:flex;flex-direction:column;gap:32px;max-width:1152px}
+.view .h1{font-size:32px;line-height:40px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:20px;background:#FFFFFF;border:1px solid #D9D9D7;font:inherit;color:#343534;text-align:left;cursor:pointer;transition:border-color .15s}
+.tile:hover{border-color:#343534}
+.tile-v{font-size:28px;line-height:36px;font-weight:700;font-variant-numeric:tabular-nums}
+.tile-more{margin-top:auto;padding-top:12px;display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:600;color:#B23149}
+.tile:hover .tile-more{text-decoration:underline;text-underline-offset:3px}
+@container page (max-width: 1023px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .side{display:none}
+  .side.open{display:block;position:fixed;top:0;left:0;bottom:0;width:280px;min-height:0;z-index:50;overflow:auto}
+  .side.open .side-toggle{display:none}
+  .side.open .side-close{display:inline-flex}
+  .side-backdrop{position:fixed;inset:0;z-index:45;background:rgba(52,53,52,.6)}
+  .menu-btn{display:inline-flex}
+  .content{padding:32px}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@container page (max-width: 639px){
+  .hdr-in{padding:0 16px;gap:12px;min-height:64px}
+  .content{padding:24px 16px 48px}
+  .side-logo .brand-name{display:block}
+  .view{gap:24px}
+  .view .h1{font-size:24px;line-height:32px}
+  .tile{padding:16px}
+  .tile-v{font-size:22px;line-height:28px}
+}
+@media (prefers-reduced-motion: reduce){.side{transition:none}}
+/* ===== layout v3: sidebar | (top bar + content) ===== */
+.wf{display:block}
+.shell{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:stretch;min-height:100vh}
+.side-in{top:73px}
+.side-brand{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:8px 0 24px 12px}
+.side-group{font-size:14px;line-height:20px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#5E5F5D;padding:16px 12px 8px}
+.col{min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:30;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;min-height:72px;background:#FFFFFF;border-bottom:1px solid #D9D9D7;padding:0 48px}
+.topbar-title{grid-column:2;font-size:18px;line-height:24px;font-weight:700;text-align:center;white-space:nowrap}
+.topbar .menu-btn{grid-column:1;justify-self:start;display:none}
+.topbar .filters{gap:16px}
+.reg-field{width:220px}
+.topbar-end{grid-column:3;justify-self:end;display:flex;align-items:center;gap:16px}
+.topbar .icon-btn{position:relative;cursor:pointer}
+.view{max-width:none;width:100%}
+sc-if,sc-for{display:contents}
+.view > .wrap{display:contents}
+.content > *{width:100%}
+.bar-row{grid-template-columns:180px minmax(0,1fr) 92px}
+.content{display:flex;flex-direction:column;align-items:stretch}
+.filters{gap:16px}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.page-actions{display:flex;gap:12px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px}
+.c-3{grid-column:span 3}.c-4{grid-column:span 4}.c-5{grid-column:span 5}.c-6{grid-column:span 6}
+.mini-list{display:flex;flex-direction:column}
+.mini-list li{display:flex;flex-direction:column;gap:4px;padding:12px 0;border-top:1px solid #D9D9D7}
+.mini-list li:first-child{border-top:0;padding-top:0}
+.mini-row{flex-direction:row !important;align-items:center;justify-content:space-between;gap:12px}
+.bar-row-s{grid-template-columns:120px minmax(0,1fr) 48px}
+.link-btn{align-self:flex-start;margin:auto 0 0 -12px}
+@container page (max-width: 1279px){
+  .c-3,.c-4,.c-5{grid-column:span 6}
+  .c-6{grid-column:span 12}
+}
+@container page (max-width: 1023px){
+  .topbar{padding:0 32px}
+  .topbar .menu-btn{display:inline-flex}
+  .side-brand .side-logo{display:flex}
+}
+@container page (max-width: 639px){
+  .topbar{padding:0 16px;min-height:64px}
+  .reg-field{width:auto}
+  .grid{gap:16px}
+  .c-3,.c-4,.c-5,.c-6{grid-column:span 12}
+  .page-actions{width:100%}
+}
+
+</style>
+</helmet>
+
+<div class="stage">
+<div class="wf" style="max-width: {{maxW}}">
+
+  <a class="skip" href="#content">Skip to content</a>
+
+
+  <sc-if value="{{menuOpen}}" hint-placeholder-val="{{ false }}"><div class="side-backdrop" onClick="{{closeMenu}}"></div></sc-if>
+  <header class="topbar">
+    <button type="button" class="btn btn-secondary menu-btn" aria-expanded="{{menuExpanded}}" aria-controls="side" onClick="{{toggleMenu}}"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14M3 10h14M3 15h14"></path></svg>Menu</button>
+    <p class="topbar-title">Market Radar</p>
+    <div class="topbar-end">
+      <button type="button" class="icon-btn has-tip" aria-label="{{bellLabel}}" onClick="{{goPolicy}}"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 14V9a5 5 0 0 1 10 0v5l1.5 2h-13zM8 18h4"></path></svg><span class="badge" aria-hidden="true">{{newCount}}</span><span class="tip tip-b tip-r" aria-hidden="true">{{newCount}} new policy items</span></button>
+    </div>
+  </header>
+  <div class="shell">
+    <aside class="{{sideCls}}" id="side" aria-label="Main">
+      <div class="side-in">
+      <div class="side-brand">
+        <button type="button" class="brand side-logo" onClick="{{goHome}}" aria-label="Market Radar by Powercoders, overview">
+          <img src="/_blob/68d685a23b486d14247a27f204fd8e6e" alt="">
+        </button>
+        <button type="button" class="side-toggle" aria-label="{{collapseLabel}}" onClick="{{toggleCollapse}}"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="{{collapseIcon}}"></path></svg></button>
+      </div>
+      <button type="button" class="side-close" aria-label="Close menu" onClick="{{closeMenu}}"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"></path></svg></button>
+      <nav aria-label="Sections">
+        <p class="side-group side-label">Menu</p>
+        <ul class="side-list">
+          <sc-for list="{{nav}}" as="n" hint-placeholder-count="6">
+            <li>
+              <button type="button" class="side-link has-tip" aria-current="{{n.current}}" onClick="{{n.go}}">
+                <svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="{{n.icon}}"></path></svg>
+                <span class="side-label">{{n.label}}</span>
+                <sc-if value="{{n.hasBadge}}" hint-placeholder-val="{{ false }}"><span class="side-badge"><span aria-hidden="true">{{newCount}}</span><span class="sr">, {{newCount}} new</span></span></sc-if>
+                <span class="tip tip-side" aria-hidden="true">{{n.label}}</span>
+              </button>
+            </li>
+          </sc-for>
+        </ul>
+        <p class="side-group side-label">General</p>
+        <ul class="side-list">
+          <sc-for list="{{nav2}}" as="n" hint-placeholder-count="1">
+            <li>
+              <button type="button" class="side-link has-tip" aria-current="{{n.current}}" onClick="{{n.go}}">
+                <svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="{{n.icon}}"></path></svg>
+                <span class="side-label">{{n.label}}</span>
+                <span class="tip tip-side" aria-hidden="true">{{n.label}}</span>
+              </button>
+            </li>
+          </sc-for>
+        </ul>
+      </nav>
+      <div class="side-foot">
+        <div class="side-label" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px">
+          <span class="tag tag-sample has-tip" tabindex="0">Sample data<span class="tip">Placeholder figures until the data snapshot is loaded</span></span>
+          <span class="small muted">Data snapshot: 20 Nov 2026</span>
+        </div>
+        <button type="button" class="btn btn-primary side-cta has-tip" onClick="{{goSubscribe}}" aria-current="{{subCurrent}}"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M3 5h14v10H3zM3 5l7 6 7-6"></path></svg><span class="side-label">Get email summary</span><span class="tip tip-side" aria-hidden="true">Get email summary</span></button>
+      </div>
+      </div>
+    </aside>
+
+    <div class="col">
+    <main class="content" id="content">
+
+    <sc-if value="{{v.overview}}" hint-placeholder-val="{{ true }}">
+    <section class="view" aria-labelledby="ov-h">
+      <div class="page-head">
+        <div class="card-head">
+          <h1 class="h1" id="ov-h">Overview</h1>
+          <p class="muted">Where the IT jobs are, which skills to teach, and what is changing.</p>
+        </div>
+        <div class="page-actions">
+          <button type="button" class="btn btn-secondary" onClick="{{goSources}}">Sources</button>
+          <button type="button" class="btn btn-primary" onClick="{{goSubscribe}}">Get email summary</button>
+        </div>
+      </div>
+      <sc-if value="{{isOutdated}}" hint-placeholder-val="{{ false }}">
+          <p class="alert al-warn" role="status"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 18 17H2z"></path><path d="M10 8v4M10 14v1"></path></svg><span><b>Outdated:</b> this data is older than 30 days (12 Aug 2026).</span></p>
+        </sc-if>
+        <sc-if value="{{isError}}" hint-placeholder-val="{{ false }}">
+          <p class="alert al-err" role="alert"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="2.5" width="15" height="15"></rect><path d="M7 7l6 6M13 7l-6 6"></path></svg><span><b>Could not load the latest data.</b> Showing the last saved snapshot from 13 Nov 2026.</span></p>
+        </sc-if>
+      <div class="tiles">
+        <button type="button" class="tile" onClick="{{goDemand}}"><span class="small muted">Open job ads · {{roleLabel}}</span><span class="tile-v">{{kpiVal}}</span><span class="{{changeCls}}"><svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="{{changePath}}"></path></svg>{{changeTxt}}</span><span class="tile-more">Demand<svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"></path></svg></span></button>
+        <button type="button" class="tile" onClick="{{goDemand}}"><span class="small muted">Most job ads in</span><span class="tile-v">{{topCanton}}</span><span class="small muted">for {{roleLabel}}</span><span class="tile-more">Demand<svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"></path></svg></span></button>
+        <button type="button" class="tile" onClick="{{goSkills}}"><span class="small muted">Rising skill</span><span class="tile-v">{{risingSkill}}</span><span class="small muted">for {{roleLabel}}</span><span class="tile-more">Skills<svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"></path></svg></span></button>
+        <button type="button" class="tile" onClick="{{goPolicy}}"><span class="small muted">New policy items</span><span class="tile-v">{{newCount}}</span><span class="small muted">since 13 Nov 2026</span><span class="tile-more">Policy<svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"></path></svg></span></button>
+      </div>
+      <div class="grid">
+          <article class="card c-6" aria-labelledby="race-q">
+            <div class="card-head">
+              <h3 class="q" id="race-q">Which role has the most job ads?</h3>
+              <sc-if value="{{st.show}}" hint-placeholder-val="{{ true }}"><p>{{raceAnswer}}</p></sc-if>
+            </div>
+            <sc-if value="{{st.loading}}" hint-placeholder-val="{{ false }}">
+              <div class="skel-box" aria-busy="true"><div class="skel" style="width: 90%; height: 32px"></div><div class="skel" style="width: 70%; height: 32px"></div><div class="skel" style="width: 50%; height: 32px"></div><span class="small muted">Loading data…</span></div>
+            </sc-if>
+            <sc-if value="{{st.empty}}" hint-placeholder-val="{{ false }}">
+              <p class="alert al-empty"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14"></rect><path d="M7 10h6"></path></svg><span><b>No job ads yet.</b> Check again after the next data update.</span></p>
+            </sc-if>
+            <sc-if value="{{st.show}}" hint-placeholder-val="{{ true }}">
+              <div class="race-head">
+                <span class="race-month" aria-live="polite">{{raceMonth}}</span>
+                <span class="small muted" style="margin-left: auto">Click a role to see its salary</span>
+                <button type="button" class="btn btn-ghost" onClick="{{replay}}"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10a6 6 0 1 0 2-4.5M4 3v4h4"></path></svg>Replay</button>
+              </div>
+              <div class="race" role="group" aria-label="{{raceAria}}">
+                <sc-for list="{{race}}" as="r" hint-placeholder-count="3">
+                  <button type="button" class="race-row race-btn has-tip" style="order: {{r.rank}}" onClick="{{r.open}}" aria-label="{{r.aria}}">
+                    <span class="race-name">{{r.label}}</span>
+                    <span class="race-track"><span class="{{r.cls}}" style="display: block; width: {{r.w}}"><span class="tip tip-in" aria-hidden="true"><b>{{r.val}}</b> job ads · click for salary</span></span><span class="race-val">{{r.val}}</span></span>
+                  </button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </article>
+
+          <article class="card c-3" aria-labelledby="sal-q">
+            <div class="card-head">
+              <h3 class="q" id="sal-q">Average salary</h3>
+              <p class="muted small">{{roleLabel}} · last 12 months</p>
+            </div>
+            <span class="big">{{salAvg}}</span>
+            <span class="{{salChgCls}}"><svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="{{salChgPath}}"></path></svg>{{salChg}}</span>
+            <button type="button" class="btn btn-secondary" style="margin-top: auto; align-self: flex-start" onClick="{{openSalCurrent}}">Open salary chart</button>
+          </article>
+          <article class="card c-3" aria-labelledby="newpol-q">
+            <div class="card-head"><h3 class="q" id="newpol-q">Newest policy items</h3></div>
+            <ul class="mini-list">
+              <sc-for list="{{policyTop}}" as="p" hint-placeholder-count="3">
+                <li><span class="small muted">{{p.date}}</span><b>{{p.title}}</b><span class="{{p.impCls}}" style="align-self: flex-start">{{p.impLabel}}</span></li>
+              </sc-for>
+            </ul>
+            <button type="button" class="btn btn-ghost link-btn" onClick="{{goPolicy}}">All policy items<svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"></path></svg></button>
+          </article>
+          <article class="card c-5" aria-labelledby="emp-q">
+            <div class="card-head"><h3 class="q" id="emp-q">Top employers · {{roleLabel}}</h3></div>
+            <ul class="mini-list">
+              <sc-for list="{{empTop}}" as="e" hint-placeholder-count="4">
+                <li class="mini-row"><span><b>{{e.name}}</b><br><span class="small muted">{{e.canton}} · {{e.jobs}} open jobs</span></span><span class="tags"><sc-if value="{{e.junior}}" hint-placeholder-val="{{ true }}"><span class="tag tag-junior">Junior-friendly</span></sc-if><sc-if value="{{e.partner}}" hint-placeholder-val="{{ false }}"><span class="tag tag-partner">Partner</span></sc-if></span></li>
+              </sc-for>
+            </ul>
+            <button type="button" class="btn btn-ghost link-btn" onClick="{{goEmployers}}">All employers<svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"></path></svg></button>
+          </article>
+          <article class="card c-4" aria-labelledby="sk-q">
+            <div class="card-head"><h3 class="q" id="sk-q">Top skills · {{roleLabel}}</h3></div>
+            <div class="bars bars-dim" role="img" aria-label="{{skillAria}}">
+              <sc-for list="{{skills}}" as="s" hint-placeholder-count="5">
+                <div class="bar-row bar-row-s has-tip" aria-hidden="true"><span>{{s.name}}</span><div class="bar-track"><div class="bar-fill" style="width: {{s.w}}"><span class="tip tip-in">{{s.tip}}</span></div></div><span class="bar-val {{s.trCls}}">{{s.pct}}</span></div>
+              </sc-for>
+            </div>
+            <button type="button" class="btn btn-ghost link-btn" onClick="{{goSkills}}">All skills<svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"></path></svg></button>
+          </article>
+          <article class="card c-3" aria-labelledby="snap-q">
+            <div class="card-head"><h3 class="q" id="snap-q">Data snapshot</h3></div>
+            <span class="big" style="font-size: 28px; line-height: 36px">{{chipDate}}</span>
+            <p class="small muted">8 sources · official APIs and open data only</p>
+            <button type="button" class="btn btn-ghost link-btn" onClick="{{goSources}}">View sources<svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"></path></svg></button>
+          </article>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{v.demand}}" hint-placeholder-val="{{ false }}">
+    <section class="view" aria-labelledby="demand-h">
+      <div class="card-head"><h1 class="h1" id="demand-h">Demand</h1><p class="muted">Is there work for this role, and where?</p></div>
+          <div class="filters">
+      <div class="field seg-field">
+        <span class="label" id="role-l">Role</span>
+        <div class="seg" role="group" aria-labelledby="role-l">
+          <sc-for list="{{roles}}" as="r" hint-placeholder-count="3">
+            <button type="button" aria-pressed="{{r.pressed}}" onClick="{{r.pick}}">{{r.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div class="field role-sel">
+        <label class="label" for="role-s">Role</label>
+        <div class="sel"><select class="input" id="role-s" value="{{role}}" onChange="{{onRoleSelect}}"><option value="web">Web developer</option><option value="it">IT support</option><option value="data">Data analyst</option></select><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8l5 5 5-5"></path></svg></div>
+      </div>
+      <div class="field reg-field">
+        <label class="label" for="reg-s">Region</label>
+        <div class="sel"><select class="input" id="reg-s" value="{{region}}" onChange="{{onRegion}}"><option value="all">All of Switzerland</option><option value="Zürich">Zürich</option><option value="Bern">Bern</option><option value="Vaud">Vaud</option><option value="Aargau">Aargau</option><option value="Basel-Stadt">Basel-Stadt</option><option value="Geneva">Geneva</option></select><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 8l5 5 5-5"></path></svg></div>
+      </div>
+          </div>
+
+      <sc-if value="{{isOutdated}}" hint-placeholder-val="{{ false }}">
+          <p class="alert al-warn" role="status"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 18 17H2z"></path><path d="M10 8v4M10 14v1"></path></svg><span><b>Outdated:</b> this data is older than 30 days (12 Aug 2026).</span></p>
+        </sc-if>
+        <sc-if value="{{isError}}" hint-placeholder-val="{{ false }}">
+          <p class="alert al-err" role="alert"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="2.5" width="15" height="15"></rect><path d="M7 7l6 6M13 7l-6 6"></path></svg><span><b>Could not load the latest data.</b> Showing the last saved snapshot from 13 Nov 2026.</span></p>
+        </sc-if>
+      <div class="cards">
+          <article class="card" aria-labelledby="kpi-q">
+            <div class="card-head">
+              <h3 class="q" id="kpi-q">Is there work for {{roleLabel}}?</h3>
+              <sc-if value="{{st.show}}" hint-placeholder-val="{{ true }}"><p>{{kpiAnswer}}</p></sc-if>
+            </div>
+            <sc-if value="{{st.loading}}" hint-placeholder-val="{{ false }}">
+              <div class="skel-box" aria-busy="true"><div class="skel" style="width: 40%; height: 40px"></div><div class="skel" style="width: 100%; height: 80px"></div><span class="small muted">Loading data…</span></div>
+            </sc-if>
+            <sc-if value="{{st.empty}}" hint-placeholder-val="{{ false }}">
+              <p class="alert al-empty"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14"></rect><path d="M7 10h6"></path></svg><span><b>No job ads yet</b> for this role and region. Try All of Switzerland.</span></p>
+            </sc-if>
+            <sc-if value="{{st.show}}" hint-placeholder-val="{{ true }}">
+              <div class="kpi">
+                <span class="big">{{kpiVal}}</span>
+                <span class="muted small" style="padding-bottom: 8px">{{kpiLabel}}</span>
+                <span class="{{changeCls}}" style="padding-bottom: 8px; margin-left: auto"><svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="{{changePath}}"></path></svg>{{changeTxt}}</span>
+              </div>
+              <button type="button" class="btn btn-ghost" style="align-self: flex-start; margin-left: -12px" onClick="{{openSalCurrent}}">Average salary for {{roleLabel}}<svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h12M11 5l5 5-5 5"></path></svg></button>
+              <div>
+                <div class="trend">
+                  <svg viewBox="0 0 512 96" preserveAspectRatio="none" role="img" aria-label="{{trendAria}}">
+                    <line x1="0" y1="95.5" x2="512" y2="95.5" stroke="#D9D9D7" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+                    <polyline points="{{trendPoints}}" fill="none" stroke="#B23149" stroke-width="2.5" vector-effect="non-scaling-stroke"></polyline>
+                  </svg>
+                  <div class="trend-hit" aria-hidden="true">
+                    <sc-for list="{{trendPts}}" as="p" hint-placeholder-count="6">
+                      <div class="pt has-tip"><span class="pt-line"></span><span class="{{p.dotCls}}" style="top: {{p.top}}"></span><span class="{{p.tipCls}}"><b>{{p.val}}</b> job ads · {{p.month}}</span></div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div class="months" aria-hidden="true"><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span></div>
+              </div>
+            </sc-if>
+          </article>
+          <article class="card" aria-labelledby="canton-q">
+            <div class="card-head">
+              <h3 class="q" id="canton-q">Where are the jobs?</h3>
+              <sc-if value="{{st.show}}" hint-placeholder-val="{{ true }}"><p>{{cantonAnswer}}</p></sc-if>
+            </div>
+            <sc-if value="{{st.loading}}" hint-placeholder-val="{{ false }}">
+              <div class="skel-box" aria-busy="true"><div class="skel" style="width: 90%"></div><div class="skel" style="width: 75%"></div><div class="skel" style="width: 55%"></div><span class="small muted">Loading data…</span></div>
+            </sc-if>
+            <sc-if value="{{st.empty}}" hint-placeholder-val="{{ false }}">
+              <p class="alert al-empty"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14"></rect><path d="M7 10h6"></path></svg><span><b>No job ads yet</b> for this role in any canton.</span></p>
+            </sc-if>
+            <sc-if value="{{st.show}}" hint-placeholder-val="{{ true }}">
+              <div class="bars" role="group" aria-label="Job ads by canton. Select a canton to filter the page.">
+                <sc-for list="{{cantons}}" as="c" hint-placeholder-count="6">
+                  <button type="button" class="bar-row bar-btn has-tip" aria-pressed="{{c.pressed}}" onClick="{{c.pick}}"><span class="bar-name">{{c.name}}</span><span class="bar-track"><span class="{{c.cls}}" style="display: block; width: {{c.w}}"><span class="tip tip-in" aria-hidden="true">{{c.tip}}</span></span></span><span class="bar-val">{{c.val}}</span></button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </article>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{v.skills}}" hint-placeholder-val="{{ false }}">
+    <section class="view" aria-labelledby="skills-h">
+      <div class="card-head"><h1 class="h1" id="skills-h">Skills</h1><p class="muted">What employers ask for, and what to teach.</p></div>
+      <sc-if value="{{isOutdated}}" hint-placeholder-val="{{ false }}">
+          <p class="alert al-warn" role="status"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 18 17H2z"></path><path d="M10 8v4M10 14v1"></path></svg><span><b>Outdated:</b> this data is older than 30 days (12 Aug 2026).</span></p>
+        </sc-if>
+        <sc-if value="{{isError}}" hint-placeholder-val="{{ false }}">
+          <p class="alert al-err" role="alert"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="2.5" width="15" height="15"></rect><path d="M7 7l6 6M13 7l-6 6"></path></svg><span><b>Could not load the latest data.</b> Showing the last saved snapshot from 13 Nov 2026.</span></p>
+        </sc-if>
+      <div class="cards">
+          <article class="card span-2" aria-labelledby="skill-q">
+            <div class="card-head">
+              <h3 class="q" id="skill-q">Which skills do employers ask for?</h3>
+              <sc-if value="{{st.show}}" hint-placeholder-val="{{ true }}"><p>{{skillAnswer}}</p></sc-if>
+            </div>
+            <sc-if value="{{st.loading}}" hint-placeholder-val="{{ false }}">
+              <div class="skel-box" aria-busy="true"><div class="skel" style="width: 90%"></div><div class="skel" style="width: 70%"></div><div class="skel" style="width: 50%"></div><span class="small muted">Loading data…</span></div>
+            </sc-if>
+            <sc-if value="{{st.empty}}" hint-placeholder-val="{{ false }}">
+              <p class="alert al-empty"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14"></rect><path d="M7 10h6"></path></svg><span><b>No skills yet.</b> There are no job ads in this snapshot.</span></p>
+            </sc-if>
+            <sc-if value="{{st.show}}" hint-placeholder-val="{{ true }}">
+              <div class="bars bars-dim" role="img" aria-label="{{skillAria}}">
+                <sc-for list="{{skills}}" as="s" hint-placeholder-count="5">
+                  <div class="bar-row has-tip" aria-hidden="true"><span>{{s.name}}</span><div class="bar-track"><div class="bar-fill" style="width: {{s.w}}"><span class="tip tip-in">{{s.tip}}</span></div></div><span class="bar-val {{s.trCls}}"><svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="{{s.path}}"></path></svg>{{s.pct}}</span></div>
+                </sc-for>
+              </div>
+              <p class="small muted">% of {{roleLabel}} job ads that name the skill</p>
+            </sc-if>
+          </article>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{v.employers}}" hint-placeholder-val="{{ false }}">
+    <section class="view" id="employers" aria-labelledby="emp-h">
+      <div class="wrap" style="display: flex; flex-direction: column; gap: 24px">
+        <div class="card-head">
+          <h1 class="h1" id="emp-h">Employers</h1>
+          <p aria-live="polite">{{empAnswer}}</p>
+        </div>
+      <sc-if value="{{isOutdated}}" hint-placeholder-val="{{ false }}">
+          <p class="alert al-warn" role="status"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.5 18 17H2z"></path><path d="M10 8v4M10 14v1"></path></svg><span><b>Outdated:</b> this data is older than 30 days (12 Aug 2026).</span></p>
+        </sc-if>
+        <sc-if value="{{isError}}" hint-placeholder-val="{{ false }}">
+          <p class="alert al-err" role="alert"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="2.5" width="15" height="15"></rect><path d="M7 7l6 6M13 7l-6 6"></path></svg><span><b>Could not load the latest data.</b> Showing the last saved snapshot from 13 Nov 2026.</span></p>
+        </sc-if>
+        <fieldset class="checks" style="display: flex; flex-wrap: wrap; gap: 0 24px">
+          <legend class="sr">Filter companies</legend>
+          <label class="check"><input type="checkbox" checked="{{junior}}" onChange="{{onJunior}}">Junior-friendly</label>
+          <label class="check"><input type="checkbox" checked="{{partner}}" onChange="{{onPartner}}">Our partners</label>
+          <label class="check"><input type="checkbox" checked="{{hideAgency}}" onChange="{{onAgency}}">Hide agencies</label>
+        </fieldset>
+        <sc-if value="{{empEmpty}}" hint-placeholder-val="{{ false }}">
+          <div class="alert al-empty" style="align-items: center; flex-wrap: wrap"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><rect x="3" y="3" width="14" height="14"></rect><path d="M7 10h6"></path></svg><span><b>No companies match.</b> Try another region or fewer filters.</span><button type="button" class="btn btn-ghost" style="margin-left: auto" onClick="{{resetEmp}}">Reset filters</button></div>
+        </sc-if>
+        <sc-if value="{{empShow}}" hint-placeholder-val="{{ true }}">
+          <table class="tbl cardify">
+            <caption class="sr">Companies hiring for {{roleLabel}}</caption>
+            <thead>
+              <tr><th scope="col">Company</th><th scope="col">Open jobs</th><th scope="col">Canton</th><th scope="col">Tags</th><th scope="col"><span class="sr">Link</span></th></tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{employers}}" as="e" hint-placeholder-count="5">
+                <tr>
+                  <td data-label="Company"><b>{{e.name}}</b></td>
+                  <td data-label="Open jobs" class="num">{{e.jobs}}</td>
+                  <td data-label="Canton">{{e.canton}}</td>
+                  <td data-label="Tags"><span class="tags"><sc-if value="{{e.junior}}" hint-placeholder-val="{{ true }}"><span class="tag tag-junior">Junior-friendly</span></sc-if><sc-if value="{{e.partner}}" hint-placeholder-val="{{ false }}"><span class="tag tag-partner">Partner</span></sc-if><sc-if value="{{e.agency}}" hint-placeholder-val="{{ false }}"><span class="tag tag-agency">Agency</span></sc-if></span></td>
+                  <td data-label="Link"><a class="ext" href="#employers">Careers page<svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M8 4H4v12h12v-4M11 3h6v6M17 3l-8 8"></path></svg></a></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </sc-if>
+        <div class="card-foot">
+          <sc-if value="{{showMoreBtn}}" hint-placeholder-val="{{ true }}">
+            <button type="button" class="btn btn-secondary" onClick="{{toggleAllEmp}}">{{moreLabel}}</button>
+          </sc-if>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{v.policy}}" hint-placeholder-val="{{ false }}">
+    <section class="view" id="policy" aria-labelledby="pol-h">
+      <div class="wrap" style="display: flex; flex-direction: column; gap: 24px">
+        <div class="card-head"><h1 class="h1" id="pol-h">Policy and people</h1><p class="muted">New laws, motions and figures that affect our participants.</p></div>
+        <ol class="tl" aria-live="polite">
+          <sc-for list="{{policy}}" as="p" hint-placeholder-count="3">
+            <li class="tl-item">
+              <p class="small muted"><b style="color: #343534">{{p.date}}</b><br>{{p.typeLabel}}</p>
+              <div class="tl-body">
+                <div class="tags">
+                  <sc-if value="{{p.isNew}}" hint-placeholder-val="{{ true }}"><span class="tag tag-new">New</span></sc-if>
+                  <span class="{{p.impCls}}">{{p.impLabel}}</span>
+                </div>
+                <h3 class="q">{{p.title}}</h3>
+                <p>{{p.summary}}</p>
+                <p class="small muted"><span class="has-tip" tabindex="0" style="text-decoration: underline dotted; text-underline-offset: 3px; cursor: help">Summary by AI<span class="tip">Check the original before acting on it</span></span></p>
+              </div>
+            </li>
+          </sc-for>
+        </ol>
+        <sc-if value="{{showOlderBtn}}" hint-placeholder-val="{{ true }}">
+          <button type="button" class="btn btn-secondary" style="align-self: flex-start" onClick="{{toggleOlder}}">{{olderLabel}}</button>
+        </sc-if>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{v.subscribe}}" hint-placeholder-val="{{ false }}">
+    <section class="view" id="subscribe" aria-labelledby="mail-h">
+      <div class="wrap">
+        <div class="split">
+          <form class="panel" action="#" onSubmit="{{onSubmit}}" novalidate="">
+            <div class="card-head">
+              <h2 class="h2" id="mail-h">Get a summary by email</h2>
+              <p class="muted">Plain language, with a source link under each point.</p>
+            </div>
+            <fieldset class="checks">
+              <legend>Sections</legend>
+              <label class="check"><input type="checkbox" checked="{{secDemand}}" onChange="{{onSecDemand}}">Demand</label>
+              <label class="check"><input type="checkbox" checked="{{secSkills}}" onChange="{{onSecSkills}}">Skills</label>
+              <label class="check"><input type="checkbox" checked="{{secEmployers}}" onChange="{{onSecEmployers}}">Employers</label>
+              <label class="check"><input type="checkbox" checked="{{secPolicy}}" onChange="{{onSecPolicy}}">Policy and people</label>
+            </fieldset>
+            <fieldset class="checks">
+              <legend>How often</legend>
+              <label class="check"><input type="radio" name="freq" checked="{{freqWeekly}}" onChange="{{onWeekly}}">Weekly</label>
+              <label class="check"><input type="radio" name="freq" checked="{{freqMonthly}}" onChange="{{onMonthly}}">Monthly</label>
+            </fieldset>
+            <div class="field">
+              <label class="label" for="mail">Email address</label>
+              <input class="input" id="mail" type="email" autocomplete="email" placeholder="name@organisation.org" value="{{email}}" onChange="{{onEmail}}" aria-invalid="{{emailInvalid}}" aria-describedby="mail-e">
+              <span id="mail-e" aria-live="polite"><sc-if value="{{hasError}}" hint-placeholder-val="{{ false }}"><span class="err"><svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true" style="margin-top: 2px"><rect x="2.5" y="2.5" width="15" height="15"></rect><path d="M7 7l6 6M13 7l-6 6"></path></svg>{{formError}}</span></sc-if></span>
+            </div>
+            <button type="submit" class="btn btn-primary" style="align-self: flex-start">Subscribe</button>
+            <div aria-live="polite">
+              <sc-if value="{{submitted}}" hint-placeholder-val="{{ false }}">
+                <p class="alert al-ok"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10l4 4 8-8"></path></svg><span><b>Done (demo).</b> Nothing was saved: this prototype stores no email addresses.</span></p>
+              </sc-if>
+            </div>
+          </form>
+          <div class="panel">
+            <p class="label muted">Preview</p>
+            <div class="mail">
+              <div class="mail-head"><b>{{mailSubject}}</b></div>
+              <div class="mail-body">
+                <sc-if value="{{noSections}}" hint-placeholder-val="{{ false }}">
+                  <p class="muted">Pick at least one section to see a preview.</p>
+                </sc-if>
+                <sc-for list="{{mailPoints}}" as="m" hint-placeholder-count="2">
+                  <div class="mail-pt">
+                    <p class="label">{{m.h}}</p>
+                    <p>{{m.t}}</p>
+                    <p class="small muted">Source: <a href="#sources">{{m.src}}</a> · {{m.d}}</p>
+                  </div>
+                </sc-for>
+                <p class="small muted"><a href="#subscribe">Unsubscribe</a></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{v.sources}}" hint-placeholder-val="{{ false }}">
+    <section class="view" id="sources" aria-labelledby="src-h">
+      <div class="wrap" style="display: flex; flex-direction: column; gap: 24px">
+        <div class="card-head"><h1 class="h1" id="src-h">Sources</h1><p class="muted">Where every number comes from.</p></div>
+        <table class="tbl cardify">
+          <caption class="sr">Data sources used in Market Radar</caption>
+          <thead>
+            <tr><th scope="col">Source</th><th scope="col">What for</th><th scope="col">Used in</th><th scope="col">Updated</th></tr>
+          </thead>
+          <tbody>
+            <tr><td data-label="Source"><b>Adzuna</b></td><td data-label="What for">Job ads, regions, companies hiring</td><td data-label="Used in">Demand, Skills, Employers</td><td data-label="Updated">{{chipDate}}</td></tr>
+            <tr><td data-label="Source"><b>ESCO</b></td><td data-label="What for">List of skills to match job ads</td><td data-label="Used in">Skills</td><td data-label="Updated">{{chipDate}}</td></tr>
+            <tr><td data-label="Source"><b>BFS</b></td><td data-label="What for">Long-term job vacancy trend, canton map</td><td data-label="Used in">Demand</td><td data-label="Updated">12 Aug 2026</td></tr>
+            <tr><td data-label="Source"><b>Adzuna salary history</b></td><td data-label="What for">Average advertised salary per role, by month</td><td data-label="Used in">Salary overlay</td><td data-label="Updated">20 Nov 2026</td></tr>
+            <tr><td data-label="Source"><b>Zefix</b></td><td data-label="What for">Company details</td><td data-label="Used in">Employers</td><td data-label="Updated">20 Nov 2026</td></tr>
+            <tr><td data-label="Source"><b>Curia Vista</b></td><td data-label="What for">Parliament motions</td><td data-label="Used in">Policy and people</td><td data-label="Updated">20 Nov 2026</td></tr>
+            <tr><td data-label="Source"><b>Fedlex</b></td><td data-label="What for">Laws and rules</td><td data-label="Used in">Policy and people</td><td data-label="Updated">20 Nov 2026</td></tr>
+            <tr><td data-label="Source"><b>SEM, SECO</b></td><td data-label="What for">Asylum and integration rules, job reporting list, target group figures</td><td data-label="Used in">Policy and people</td><td data-label="Updated">20 Nov 2026</td></tr>
+          </tbody>
+        </table>
+        <ul class="rules">
+          <li><svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10l4 4 8-8"></path></svg>Totals only, no data about individuals</li>
+          <li><svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10l4 4 8-8"></path></svg>Official APIs and open data only, no scraping</li>
+        </ul>
+        <details class="how">
+          <summary>How to add a new source</summary>
+          <ol>
+            <li>Check the terms: official API, open data or a published report.</li>
+            <li>Add one short entry to the sources list: name, link, which section it feeds, credit line.</li>
+            <li>It appears here after the next data update.</li>
+          </ol>
+        </details>
+        <p class="small muted">Data snapshot: 20 Nov 2026 · Sample data · Jobs by Adzuna · Map: BFS, GEOSTAT</p>
+      </div>
+    </section>
+    </sc-if>
+
+    </main>
+    </div>
+  </div>
+
+  <!-- Salary overlay -->
+  <sc-if value="{{salOpen}}" hint-placeholder-val="{{ false }}">
+    <div class="ovl" onClick="{{closeSal}}"></div>
+    <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="sal-h" onKeyDown="{{dlgKey}}">
+      <div class="dlg-head">
+        <div class="card-head">
+          <p class="label muted">Average salary</p>
+          <h2 class="h2" id="sal-h">{{salRole}}</h2>
+        </div>
+        <button type="button" class="icon-btn" aria-label="Close" onClick="{{closeSal}}" autoFocus="{{ true }}"><svg class="ico" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"></path></svg></button>
+      </div>
+      <div class="seg" role="group" aria-label="Role">
+        <sc-for list="{{salTabs}}" as="t" hint-placeholder-count="3">
+          <button type="button" aria-pressed="{{t.pressed}}" onClick="{{t.pick}}">{{t.label}}</button>
+        </sc-for>
+      </div>
+      <div class="kpi">
+        <span class="big">{{salAvg}}</span>
+        <span class="muted small" style="padding-bottom: 8px">average per year, last 12 months</span>
+        <span class="{{salChgCls}}" style="padding-bottom: 8px; margin-left: auto"><svg class="ico ico-s" viewBox="0 0 20 20" aria-hidden="true"><path d="{{salChgPath}}"></path></svg>{{salChg}}</span>
+      </div>
+      <div>
+        <div class="cols" role="img" aria-label="{{salAria}}">
+          <sc-for list="{{salBars}}" as="b" hint-placeholder-count="12">
+            <div class="col has-tip" aria-hidden="true"><span class="{{b.cls}}" style="height: {{b.h}}"></span><span class="{{b.tipCls}}"><b>{{b.val}}</b> · {{b.month}}</span></div>
+          </sc-for>
+        </div>
+        <div class="col-months" aria-hidden="true">
+          <sc-for list="{{salBars}}" as="b" hint-placeholder-count="12"><span>{{b.m}}</span></sc-for>
+        </div>
+      </div>
+      <p class="small muted">Average advertised salary in job ads, gross per year, all of Switzerland · Sample data</p>
+    </div>
+  </sc-if>
+
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dataState":{"editor":"enum","options":["Ready","Loading","Empty","Outdated","Error"],"default":"Ready","section":"Prototype"},"previewWidth":{"editor":"enum","options":["Full width","Tablet 768","Mobile 390"],"default":"Full width","section":"Prototype"},"$preview":{"width":1440,"height":1700}}'>
+const MR_ROLES = [
+  { id: 'web', label: 'Web developer' },
+  { id: 'it', label: 'IT support' },
+  { id: 'data', label: 'Data analyst' }
+];
+const MR_NAV = [
+  { id: 'overview', label: 'Overview', icon: 'M3 9l7-6 7 6v8h-5v-5H8v5H3z' },
+  { id: 'demand', label: 'Demand', icon: 'M3 17h14M5 17V10M10 17V4M15 17v-7' },
+  { id: 'skills', label: 'Skills', icon: 'M10 5C8 3.5 5 3.5 3 4v12c2-.5 5-.5 7 1 2-1.5 5-1.5 7-1V4c-2-.5-5-.5-7 1zM10 5v12' },
+  { id: 'employers', label: 'Employers', icon: 'M4 17V3h8v14M12 8h4v9M2 17h16M7 6h2M7 9h2M7 12h2' },
+  { id: 'policy', label: 'Policy and people', icon: 'M5 2h7l4 4v12H5zM12 2v4h4M8 10h5M8 13h5' }
+];
+const MR_NAV2 = [
+  { id: 'sources', label: 'Sources', icon: 'M4 5c0-1.5 12-1.5 12 0v10c0 1.5-12 1.5-12 0zM4 5c0 1.5 12 1.5 12 0M4 10c0 1.5 12 1.5 12 0' }
+];
+const MR_MONTHS = ['June 2026', 'July 2026', 'August 2026', 'September 2026', 'October 2026', 'November 2026'];
+const MR_MONTHS_S = ['Jun 2026', 'Jul 2026', 'Aug 2026', 'Sep 2026', 'Oct 2026', 'Nov 2026'];
+const MR_SERIES = { web: [910, 940, 920, 960, 950, 980], it: [1040, 1080, 1060, 1150, 1190, 1240], data: [650, 640, 660, 630, 620, 610] };
+const MR_CHANGE = { web: 3, it: 8, data: -4 };
+const MR_CANTONS = ['Zürich', 'Bern', 'Vaud', 'Aargau', 'Basel-Stadt', 'Geneva'];
+const MR_BY_CANTON = { web: [310, 120, 110, 60, 90, 85], it: [360, 170, 110, 120, 70, 60], data: [230, 60, 55, 30, 90, 70] };
+const MR_SKILLS = {
+  web: [['JavaScript', 46, 'up', 1, 1], ['React', 34, 'up', 3, 2], ['HTML and CSS', 30, 'down', 2, 3], ['TypeScript', 22, 'up', 5, 4], ['PHP', 12, 'down', 4, 5]],
+  it: [['Microsoft 365', 38, 'up', 1, 1], ['Networking', 31, 'up', 3, 2], ['Active Directory', 24, 'down', 2, 3], ['ITIL', 17, 'up', 5, 4], ['Linux', 14, 'down', 4, 5]],
+  data: [['SQL', 52, 'flat', 1, 1], ['Python', 41, 'up', 3, 2], ['Excel', 33, 'down', 2, 3], ['Power BI', 29, 'up', 5, 4], ['Tableau', 12, 'down', 4, 5]]
+};
+const MR_EMP = [
+  { n: 'Sample company A', c: 'Zürich', j: { web: 12, it: 8, data: 5 }, junior: true, partner: true, agency: false },
+  { n: 'Sample company B', c: 'Bern', j: { web: 4, it: 9, data: 0 }, junior: true, partner: false, agency: false },
+  { n: 'Sample agency C', c: 'Zürich', j: { web: 20, it: 15, data: 6 }, junior: false, partner: false, agency: true },
+  { n: 'Sample company D', c: 'Basel-Stadt', j: { web: 6, it: 3, data: 7 }, junior: false, partner: true, agency: false },
+  { n: 'Sample company E', c: 'Vaud', j: { web: 3, it: 6, data: 2 }, junior: true, partner: false, agency: false },
+  { n: 'Sample company F', c: 'Aargau', j: { web: 2, it: 5, data: 0 }, junior: false, partner: false, agency: false },
+  { n: 'Sample company G', c: 'Zürich', j: { web: 9, it: 0, data: 4 }, junior: true, partner: true, agency: false },
+  { n: 'Sample agency H', c: 'Geneva', j: { web: 5, it: 4, data: 0 }, junior: false, partner: false, agency: true }
+];
+const MR_POLICY = [
+  { type: 'motion', typeLabel: 'Parliament motion', date: '18 Nov 2026', title: 'Easier job changes for provisionally admitted people', summary: 'Asks to drop the permit step when a provisionally admitted person changes employer. If passed, graduates could switch jobs faster.', impact: 'high', isNew: true, src: 'Curia Vista', dl: 'Downloaded 20 Nov 2026' },
+  { type: 'law', typeLabel: 'Law or rule', date: '12 Nov 2026', title: 'Job reporting list for 2027', summary: 'Occupations where employers must first report vacancies to the job centre. If IT support is on it, partners hiring for it take an extra step.', impact: 'medium', isNew: true, src: 'SECO', dl: 'Downloaded 20 Nov 2026' },
+  { type: 'stats', typeLabel: 'Statistics', date: '5 Nov 2026', title: 'Asylum statistics, October 2026', summary: 'Monthly figures on asylum applications and residence status by canton. Useful for outreach and class planning.', impact: 'low', isNew: true, src: 'SEM', dl: 'Downloaded 20 Nov 2026' },
+  { type: 'law', typeLabel: 'Law or rule', date: '20 Oct 2026', title: 'Updated guidelines for the integration agenda', summary: 'Cantons get new guidelines on language and job coaching for refugees. This may change who pays for course places.', impact: 'medium', isNew: false, src: 'Fedlex', dl: 'Downloaded 13 Nov 2026' },
+  { type: 'motion', typeLabel: 'Parliament motion', date: '2 Oct 2026', title: 'Recognition of IT certificates from abroad', summary: 'Asks for a simpler way to recognise IT diplomas earned abroad. Still in committee, so nothing changes yet.', impact: 'low', isNew: false, src: 'Curia Vista', dl: 'Downloaded 13 Nov 2026' }
+];
+const MR_SAL = {
+  web: [86200, 86500, 86900, 87100, 87000, 87600, 88000, 88300, 88100, 88700, 89000, 89400],
+  it: [70800, 70900, 71200, 71000, 71500, 71700, 71900, 72200, 72100, 72500, 72800, 73100],
+  data: [88400, 88900, 89300, 89100, 89800, 90200, 90600, 90400, 91000, 91300, 91700, 92100]
+};
+const MR_SAL_M = ['Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov'];
+const MR_SAL_Y = ['2025', '2026', '2026', '2026', '2026', '2026', '2026', '2026', '2026', '2026', '2026', '2026'];
+const MR_UP = 'M10 16V4M5 9l5-5 5 5';
+const MR_DOWN = 'M10 4v12M5 11l5 5 5-5';
+const MR_FLAT = 'M3 10h14M12 5l5 5-5 5';
+
+function mrFmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "'"); }
+function riser0(sk) { return sk.slice().sort((a, b) => (b[3] - b[4]) - (a[3] - a[4]))[0][0]; }
+function mrList(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
+
+class Component extends DCLogic {
+  constructor(...args) {
+    super(...args);
+    this.state = {
+      role: 'it', region: 'all', raceIdx: 5, view: 'overview', collapsed: false, salRole: '',
+      junior: false, partner: false, hideAgency: true, showAllEmp: false,
+      policyType: 'all', showOlder: false, menuOpen: false,
+      secDemand: true, secSkills: true, secEmployers: false, secPolicy: false, alertNew: true,
+      freq: 'weekly', email: '', formError: '', submitted: false
+    };
+    this.timer = null;
+  }
+
+  componentDidMount() { this.play(); }
+  componentWillUnmount() { clearInterval(this.timer); }
+
+  play() {
+    clearInterval(this.timer);
+    const reduce = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { this.setState({ raceIdx: 5 }); return; }
+    let i = 0;
+    this.setState({ raceIdx: 0 });
+    this.timer = setInterval(() => {
+      i += 1;
+      this.setState({ raceIdx: i });
+      if (i >= 5) clearInterval(this.timer);
+    }, 900);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const ds = this.props.dataState ?? 'Ready';
+    const pw = this.props.previewWidth ?? 'Full width';
+    const maxW = pw === 'Mobile 390' ? '390px' : (pw === 'Tablet 768' ? '768px' : 'none');
+    const st = { loading: ds === 'Loading', empty: ds === 'Empty', show: ds !== 'Loading' && ds !== 'Empty' };
+    const isOutdated = ds === 'Outdated';
+    const role = s.role;
+    const roleLabel = MR_ROLES.find((r) => r.id === role).label;
+    const series = MR_SERIES[role];
+
+    // KPI + trend
+    const ci = MR_CANTONS.indexOf(s.region);
+    const kpiVal = ci < 0 ? series[5] : MR_BY_CANTON[role][ci];
+    const chg = MR_CHANGE[role];
+    const up = chg >= 0;
+    const changeShort = (up ? '+' : '−') + Math.abs(chg) + '%';
+    const changeTxt = changeShort + ' vs 3 months ago';
+    const kpiAnswer = up
+      ? 'Yes. Job ads rose ' + changeShort + ' over the last 3 months.'
+      : 'Yes, but fewer than before: job ads fell ' + Math.abs(chg) + '% over the last 3 months.';
+    const mn = Math.min(...series), mx = Math.max(...series);
+    const ys = series.map((v) => 84 - ((v - mn) / (mx - mn || 1)) * 70);
+    const trendPoints = series.map((v, i) => ((i + 0.5) * 512 / 6).toFixed(1) + ',' + ys[i].toFixed(1)).join(' ');
+    const trendPts = series.map((v, i) => ({
+      val: mrFmt(v), month: MR_MONTHS_S[i], top: (ys[i] / 96 * 100).toFixed(1) + '%',
+      dotCls: i === 5 ? 'pt-dot last' : 'pt-dot',
+      tipCls: i === 5 ? 'tip tip-in tip-r' : 'tip tip-in'
+    }));
+
+    // Bar race
+    const idx = s.raceIdx;
+    const at = MR_ROLES.map((r) => ({ id: r.id, label: r.label, v: MR_SERIES[r.id][idx] }));
+    const sorted = at.slice().sort((a, b) => b.v - a.v);
+    const race = at.map((r) => ({
+      label: r.label, val: mrFmt(r.v), w: (r.v / 1300 * 100).toFixed(1) + '%', month: MR_MONTHS_S[idx],
+      rank: sorted.findIndex((x) => x.id === r.id), cls: r.id === role ? 'race-fill sel' : 'race-fill',
+      aria: r.label + ': ' + mrFmt(r.v) + ' job ads. Show average salary',
+      open: () => this.setState({ salRole: r.id })
+    }));
+    const sr = s.salRole || role;
+    const sal = MR_SAL[sr];
+    const salLabel = MR_ROLES.find((r) => r.id === sr).label;
+    const salAvgN = Math.round(sal.reduce((t, v) => t + v, 0) / sal.length / 100) * 100;
+    const salPct = Math.round((sal[11] / sal[0] - 1) * 1000) / 10;
+    const salBars = sal.map((v, i) => ({
+      m: MR_SAL_M[i].charAt(0), month: MR_SAL_M[i] + ' ' + MR_SAL_Y[i], val: 'CHF ' + mrFmt(v),
+      h: (v / 100000 * 100).toFixed(1) + '%', cls: i === 11 ? 'col-bar sel' : 'col-bar',
+      tipCls: i < 2 ? 'tip tip-in tip-l' : (i > 9 ? 'tip tip-in tip-r' : 'tip tip-in')
+    }));
+    const latest = MR_ROLES.map((r) => ({ label: r.label, v: MR_SERIES[r.id][5], g: MR_SERIES[r.id][5] / MR_SERIES[r.id][0] })).sort((a, b) => b.v - a.v);
+    const fastest = latest.slice().sort((a, b) => b.g - a.g)[0];
+    const raceAnswer = latest[0].label + ' has the most job ads' + (fastest.label === latest[0].label ? ' and grew fastest since June.' : '. ' + fastest.label + ' grew fastest since June.');
+    const raceAria = 'Job ads per role in ' + MR_MONTHS[idx] + ': ' + sorted.map((r) => r.label + ' ' + mrFmt(r.v)).join(', ');
+
+    // Cantons
+    const cv = MR_CANTONS.map((c, i) => ({ name: c, v: MR_BY_CANTON[role][i] })).sort((a, b) => b.v - a.v);
+    const cmax = cv[0].v;
+    const cantons = cv.map((c) => {
+      const on = c.name === s.region;
+      return {
+        name: c.name, val: mrFmt(c.v), w: (c.v / cmax * 100).toFixed(1) + '%',
+        cls: on ? 'bar-fill sel' : 'bar-fill', pressed: on ? 'true' : 'false',
+        tip: on ? 'Click to show all of Switzerland' : 'Click to show only ' + c.name,
+        pick: () => this.setState({ region: on ? 'all' : c.name })
+      };
+    });
+    const cantonAnswer = 'Most ads are in ' + cv[0].name + ', then ' + cv[1].name + '. Click a canton to filter.';
+
+    // Skills
+    const sk = MR_SKILLS[role];
+    const trWord = { up: 'rising', down: 'falling', flat: 'steady' };
+    const skills = sk.map((x) => ({
+      name: x[0], pct: x[1] + '%', w: (x[1] / 55 * 100).toFixed(1) + '%',
+      tip: 'In ' + x[1] + '% of ' + roleLabel + ' ads · ' + trWord[x[2]],
+      trCls: x[2] === 'up' ? 'tr-up' : (x[2] === 'down' ? 'tr-down' : 'tr-flat'),
+      path: x[2] === 'up' ? MR_UP : (x[2] === 'down' ? MR_DOWN : MR_FLAT)
+    }));
+    const skillAnswer = sk[0][0] + ' and ' + sk[1][0] + ' come up most often. ' + riser0(sk) + ' is rising fastest.';
+    const skillAria = 'Share of ' + roleLabel + ' ads naming each skill: ' + sk.map((x) => x[0] + ' ' + x[1] + ' percent, ' + trWord[x[2]]).join('; ');
+    const rk = sk.map((x) => ({ name: x[0], from: x[3], to: x[4], d: x[3] - x[4] }));
+    const ranks = rk.slice().sort((a, b) => a.to - b.to).map((k) => ({
+      name: k.name, from: k.from, to: k.to,
+      change: k.d > 0 ? 'Up ' + k.d : (k.d < 0 ? 'Down ' + Math.abs(k.d) : 'Same'),
+      cls: k.d > 0 ? 'tr-up' : 'tr-down',
+      path: k.d > 0 ? MR_UP : (k.d < 0 ? MR_DOWN : MR_FLAT)
+    }));
+    const riser = rk.slice().sort((a, b) => b.d - a.d)[0];
+    const faller = rk.slice().sort((a, b) => a.d - b.d)[0];
+    const rankAnswer = riser.name + ' climbed the most since June. ' + faller.name + ' dropped.';
+
+    // Employers
+    const empAll = MR_EMP
+      .filter((e) => e.j[role] > 0)
+      .filter((e) => s.region === 'all' || e.c === s.region)
+      .filter((e) => !s.junior || e.junior)
+      .filter((e) => !s.partner || e.partner)
+      .filter((e) => !s.hideAgency || !e.agency)
+      .sort((a, b) => b.j[role] - a.j[role]);
+    const employers = (s.showAllEmp ? empAll : empAll.slice(0, 5)).map((e) => ({ name: e.n, jobs: e.j[role], canton: e.c, junior: e.junior, partner: e.partner, agency: e.agency }));
+    const pCount = empAll.filter((e) => e.partner).length;
+    const where = s.region === 'all' ? '' : ' in ' + s.region;
+    const empAnswer = empAll.length === 0 ? 'No companies match these filters.'
+      : empAll.length + (empAll.length === 1 ? ' company is' : ' companies are') + ' hiring for ' + roleLabel + where + ', ' + pCount + ' of them our partners.';
+
+    // Policy
+    const polFiltered = MR_POLICY.filter((p) => s.policyType === 'all' || p.type === s.policyType);
+    const impLabels = { high: 'High impact', medium: 'Medium impact', low: 'Low impact' };
+    const policy = (s.showOlder ? polFiltered : polFiltered.slice(0, 3)).map((p) => ({
+      date: p.date, typeLabel: p.typeLabel, title: p.title, summary: p.summary, src: p.src, dl: p.dl, isNew: p.isNew,
+      impCls: 'tag imp-' + p.impact, impLabel: impLabels[p.impact]
+    }));
+    const newCount = MR_POLICY.filter((p) => p.isNew).length;
+
+    // Email preview
+    const secs = [];
+    const mailPoints = [];
+    if (s.secDemand) { secs.push('Demand'); mailPoints.push({ h: 'Demand', t: roleLabel + ' job ads ' + changeTxt + '. Most ads are in ' + cv[0].name + '.', src: 'Adzuna', d: '20 Nov 2026' }); }
+    if (s.secSkills) { secs.push('Skills'); mailPoints.push({ h: 'Skills', t: sk[0][0] + ' is the most requested skill. ' + riser.name + ' climbed the most.', src: 'ESCO + Adzuna', d: '20 Nov 2026' }); }
+    if (s.secEmployers) { secs.push('Employers'); mailPoints.push({ h: 'Employers', t: empAnswer, src: 'Adzuna + Zefix', d: '20 Nov 2026' }); }
+    if (s.secPolicy) { secs.push('Policy'); mailPoints.push({ h: 'Policy and people', t: newCount + ' new items. Most important: ' + MR_POLICY[0].title + '.', src: 'Curia Vista', d: '20 Nov 2026' }); }
+    const mailSubject = 'Market Radar · ' + (s.freq === 'weekly' ? 'Week 47' : 'November 2026') + (secs.length ? ' · ' + mrList(secs) : '');
+
+    const go = (id) => {
+      this.setState({ view: id, menuOpen: false });
+      if (typeof window !== 'undefined' && window.scrollTo) window.scrollTo(0, 0);
+    };
+    const setB = (k) => (e) => this.setState({ [k]: e.target.checked, submitted: false, formError: '' });
+
+    return {
+      maxW, st, isOutdated, isError: ds === 'Error',
+      dotCls: isOutdated ? 'dot dot-old' : 'dot dot-fresh',
+      chipDate: isOutdated ? '12 Aug 2026' : '20 Nov 2026',
+      nav: MR_NAV.map((n) => ({ label: n.label, icon: n.icon, hasBadge: n.id === 'policy', current: s.view === n.id ? 'page' : 'false', go: () => go(n.id) })),
+      nav2: MR_NAV2.map((n) => ({ label: n.label, icon: n.icon, current: s.view === n.id ? 'page' : 'false', go: () => go(n.id) })),
+      showFilters: ['overview', 'demand', 'skills', 'employers'].indexOf(s.view) >= 0,
+      goEmployers: () => go('employers'), goSources: () => go('sources'),
+      policyTop: MR_POLICY.slice(0, 3).map((p) => ({ date: p.date, title: p.title, impCls: 'tag imp-' + p.impact, impLabel: impLabels[p.impact] })),
+      empTop: empAll.slice(0, 4).map((e) => ({ name: e.n, jobs: e.j[role], canton: e.c, junior: e.junior, partner: e.partner })),
+      v: { overview: s.view === 'overview', demand: s.view === 'demand', skills: s.view === 'skills', employers: s.view === 'employers', policy: s.view === 'policy', sources: s.view === 'sources', subscribe: s.view === 'subscribe' },
+      subCurrent: s.view === 'subscribe' ? 'page' : 'false',
+      goHome: () => go('overview'), goDemand: () => go('demand'), goSkills: () => go('skills'),
+      goPolicy: () => go('policy'), goSubscribe: () => go('subscribe'),
+      sideCls: 'side' + (s.menuOpen ? ' open' : (s.collapsed ? ' collapsed' : '')),
+      collapseLabel: s.collapsed ? 'Expand menu' : 'Collapse menu',
+      collapseIcon: s.collapsed ? 'M8 5l5 5-5 5' : 'M12 5l-5 5 5 5',
+      toggleCollapse: () => this.setState({ collapsed: !s.collapsed }),
+      menuOpen: s.menuOpen, menuExpanded: s.menuOpen ? 'true' : 'false',
+      toggleMenu: () => this.setState({ menuOpen: !s.menuOpen }),
+      closeMenu: () => this.setState({ menuOpen: false }),
+      bellLabel: 'Policy and people: ' + newCount + ' new items',
+      role, region: s.region, roleLabel,
+      roles: MR_ROLES.map((r) => ({ label: r.label, pressed: r.id === role ? 'true' : 'false', pick: () => this.setState({ role: r.id }) })),
+      onRoleSelect: (e) => this.setState({ role: e.target.value }),
+      onRegion: (e) => this.setState({ region: e.target.value }),
+      kpiVal: mrFmt(kpiVal),
+      kpiLabel: ci < 0 ? 'open job ads, last 30 days' : 'open job ads in ' + s.region,
+      kpiAnswer, changeTxt, changeShort,
+      changeCls: up ? 'up' : 'down', changePath: up ? MR_UP : MR_DOWN,
+      stripTrendCls: up ? 'tr-up' : 'tr-down', stripTrendPath: up ? MR_UP : MR_DOWN,
+      trendPoints, trendPts,
+      trendAria: roleLabel + ' job ads per month in Switzerland, June to November 2026: from ' + mrFmt(series[0]) + ' to ' + mrFmt(series[5]),
+      race, raceMonth: MR_MONTHS[idx], raceAnswer, raceAria,
+      replay: () => this.play(),
+      salOpen: s.salRole !== '', salRole: salLabel, salBars,
+      salAvg: 'CHF ' + mrFmt(salAvgN),
+      salChg: '+' + salPct + '% since Dec 2025',
+      salChgCls: 'up', salChgPath: MR_UP,
+      salAria: 'Average advertised salary for ' + salLabel + ' per month, December 2025 to November 2026, sample data: from CHF ' + mrFmt(sal[0]) + ' to CHF ' + mrFmt(sal[11]) + ', average CHF ' + mrFmt(salAvgN),
+      salTabs: MR_ROLES.map((r) => ({ label: r.label, pressed: r.id === sr ? 'true' : 'false', pick: () => this.setState({ salRole: r.id }) })),
+      openSalCurrent: () => this.setState({ salRole: role }),
+      closeSal: () => this.setState({ salRole: '' }),
+      dlgKey: (e) => { if (e.key === 'Escape') this.setState({ salRole: '' }); },
+      cantons, cantonAnswer, topCanton: cv[0].name,
+      skills, skillAnswer, skillAria, ranks, rankAnswer,
+      risingSkill: riser.name,
+      employers, empAnswer, empEmpty: empAll.length === 0, empShow: empAll.length > 0,
+      junior: s.junior, partner: s.partner, hideAgency: s.hideAgency,
+      onJunior: (e) => this.setState({ junior: e.target.checked }),
+      onPartner: (e) => this.setState({ partner: e.target.checked }),
+      onAgency: (e) => this.setState({ hideAgency: e.target.checked }),
+      resetEmp: () => this.setState({ junior: false, partner: false, hideAgency: true, region: 'all' }),
+      showMoreBtn: empAll.length > 5,
+      moreLabel: s.showAllEmp ? 'Show fewer' : 'Show all ' + empAll.length,
+      toggleAllEmp: () => this.setState({ showAllEmp: !s.showAllEmp }),
+      policy, newCount, policyType: s.policyType,
+      onPolicyType: (e) => this.setState({ policyType: e.target.value }),
+      showOlderBtn: polFiltered.length > 3,
+      olderLabel: s.showOlder ? 'Show only the newest' : 'Show older documents',
+      toggleOlder: () => this.setState({ showOlder: !s.showOlder }),
+      secDemand: s.secDemand, secSkills: s.secSkills, secEmployers: s.secEmployers, secPolicy: s.secPolicy, alertNew: s.alertNew,
+      onSecDemand: setB('secDemand'), onSecSkills: setB('secSkills'), onSecEmployers: setB('secEmployers'), onSecPolicy: setB('secPolicy'), onAlertNew: setB('alertNew'),
+      freqWeekly: s.freq === 'weekly', freqMonthly: s.freq === 'monthly',
+      onWeekly: () => this.setState({ freq: 'weekly', submitted: false }),
+      onMonthly: () => this.setState({ freq: 'monthly', submitted: false }),
+      email: s.email,
+      onEmail: (e) => this.setState({ email: e.target.value, formError: '', submitted: false }),
+      formError: s.formError, hasError: s.formError !== '',
+      emailInvalid: s.formError.indexOf('email') >= 0 ? 'true' : 'false',
+      submitted: s.submitted,
+      onSubmit: (e) => {
+        e.preventDefault();
+        if (!secs.length) { this.setState({ formError: 'Pick at least one section.', submitted: false }); return; }
+        if (!/^\S+@\S+\.\S+$/.test(s.email)) { this.setState({ formError: 'Enter your email address, for example name@organisation.org.', submitted: false }); return; }
+        this.setState({ formError: '', submitted: true });
+      },
+      mailSubject, mailPoints, noSections: secs.length === 0
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,702 @@
+{
+  "_note": "SAMPLE DATA ONLY. Replace with the devs' snapshot in the same shape.",
+  "snapshotDate": "2026-11-20",
+  "previousSnapshotDate": "2026-11-13",
+  "roles": [
+    {
+      "id": "web",
+      "label": "Web developer",
+      "adsByMonth": [
+        {
+          "month": "2026-06",
+          "count": 910
+        },
+        {
+          "month": "2026-07",
+          "count": 940
+        },
+        {
+          "month": "2026-08",
+          "count": 920
+        },
+        {
+          "month": "2026-09",
+          "count": 960
+        },
+        {
+          "month": "2026-10",
+          "count": 950
+        },
+        {
+          "month": "2026-11",
+          "count": 980
+        }
+      ],
+      "openAds30d": 980,
+      "changeVs3mPct": 3,
+      "adsByCanton": [
+        {
+          "canton": "Zürich",
+          "count": 310
+        },
+        {
+          "canton": "Bern",
+          "count": 120
+        },
+        {
+          "canton": "Vaud",
+          "count": 110
+        },
+        {
+          "canton": "Aargau",
+          "count": 60
+        },
+        {
+          "canton": "Basel-Stadt",
+          "count": 90
+        },
+        {
+          "canton": "Geneva",
+          "count": 85
+        }
+      ],
+      "skills": [
+        {
+          "name": "JavaScript",
+          "sharePct": 46,
+          "trend": "up",
+          "rankJune": 1,
+          "rankNow": 1
+        },
+        {
+          "name": "React",
+          "sharePct": 34,
+          "trend": "up",
+          "rankJune": 3,
+          "rankNow": 2
+        },
+        {
+          "name": "HTML and CSS",
+          "sharePct": 30,
+          "trend": "down",
+          "rankJune": 2,
+          "rankNow": 3
+        },
+        {
+          "name": "TypeScript",
+          "sharePct": 22,
+          "trend": "up",
+          "rankJune": 5,
+          "rankNow": 4
+        },
+        {
+          "name": "PHP",
+          "sharePct": 12,
+          "trend": "down",
+          "rankJune": 4,
+          "rankNow": 5
+        }
+      ],
+      "avgSalaryByMonth": [
+        {
+          "month": "2025-12",
+          "chf": 86200
+        },
+        {
+          "month": "2026-01",
+          "chf": 86500
+        },
+        {
+          "month": "2026-02",
+          "chf": 86900
+        },
+        {
+          "month": "2026-03",
+          "chf": 87100
+        },
+        {
+          "month": "2026-04",
+          "chf": 87000
+        },
+        {
+          "month": "2026-05",
+          "chf": 87600
+        },
+        {
+          "month": "2026-06",
+          "chf": 88000
+        },
+        {
+          "month": "2026-07",
+          "chf": 88300
+        },
+        {
+          "month": "2026-08",
+          "chf": 88100
+        },
+        {
+          "month": "2026-09",
+          "chf": 88700
+        },
+        {
+          "month": "2026-10",
+          "chf": 89000
+        },
+        {
+          "month": "2026-11",
+          "chf": 89400
+        }
+      ]
+    },
+    {
+      "id": "it",
+      "label": "IT support",
+      "adsByMonth": [
+        {
+          "month": "2026-06",
+          "count": 1040
+        },
+        {
+          "month": "2026-07",
+          "count": 1080
+        },
+        {
+          "month": "2026-08",
+          "count": 1060
+        },
+        {
+          "month": "2026-09",
+          "count": 1150
+        },
+        {
+          "month": "2026-10",
+          "count": 1190
+        },
+        {
+          "month": "2026-11",
+          "count": 1240
+        }
+      ],
+      "openAds30d": 1240,
+      "changeVs3mPct": 8,
+      "adsByCanton": [
+        {
+          "canton": "Zürich",
+          "count": 360
+        },
+        {
+          "canton": "Bern",
+          "count": 170
+        },
+        {
+          "canton": "Vaud",
+          "count": 110
+        },
+        {
+          "canton": "Aargau",
+          "count": 120
+        },
+        {
+          "canton": "Basel-Stadt",
+          "count": 70
+        },
+        {
+          "canton": "Geneva",
+          "count": 60
+        }
+      ],
+      "skills": [
+        {
+          "name": "Microsoft 365",
+          "sharePct": 38,
+          "trend": "up",
+          "rankJune": 1,
+          "rankNow": 1
+        },
+        {
+          "name": "Networking",
+          "sharePct": 31,
+          "trend": "up",
+          "rankJune": 3,
+          "rankNow": 2
+        },
+        {
+          "name": "Active Directory",
+          "sharePct": 24,
+          "trend": "down",
+          "rankJune": 2,
+          "rankNow": 3
+        },
+        {
+          "name": "ITIL",
+          "sharePct": 17,
+          "trend": "up",
+          "rankJune": 5,
+          "rankNow": 4
+        },
+        {
+          "name": "Linux",
+          "sharePct": 14,
+          "trend": "down",
+          "rankJune": 4,
+          "rankNow": 5
+        }
+      ],
+      "avgSalaryByMonth": [
+        {
+          "month": "2025-12",
+          "chf": 70800
+        },
+        {
+          "month": "2026-01",
+          "chf": 70900
+        },
+        {
+          "month": "2026-02",
+          "chf": 71200
+        },
+        {
+          "month": "2026-03",
+          "chf": 71000
+        },
+        {
+          "month": "2026-04",
+          "chf": 71500
+        },
+        {
+          "month": "2026-05",
+          "chf": 71700
+        },
+        {
+          "month": "2026-06",
+          "chf": 71900
+        },
+        {
+          "month": "2026-07",
+          "chf": 72200
+        },
+        {
+          "month": "2026-08",
+          "chf": 72100
+        },
+        {
+          "month": "2026-09",
+          "chf": 72500
+        },
+        {
+          "month": "2026-10",
+          "chf": 72800
+        },
+        {
+          "month": "2026-11",
+          "chf": 73100
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "label": "Data analyst",
+      "adsByMonth": [
+        {
+          "month": "2026-06",
+          "count": 650
+        },
+        {
+          "month": "2026-07",
+          "count": 640
+        },
+        {
+          "month": "2026-08",
+          "count": 660
+        },
+        {
+          "month": "2026-09",
+          "count": 630
+        },
+        {
+          "month": "2026-10",
+          "count": 620
+        },
+        {
+          "month": "2026-11",
+          "count": 610
+        }
+      ],
+      "openAds30d": 610,
+      "changeVs3mPct": -4,
+      "adsByCanton": [
+        {
+          "canton": "Zürich",
+          "count": 230
+        },
+        {
+          "canton": "Bern",
+          "count": 60
+        },
+        {
+          "canton": "Vaud",
+          "count": 55
+        },
+        {
+          "canton": "Aargau",
+          "count": 30
+        },
+        {
+          "canton": "Basel-Stadt",
+          "count": 90
+        },
+        {
+          "canton": "Geneva",
+          "count": 70
+        }
+      ],
+      "skills": [
+        {
+          "name": "SQL",
+          "sharePct": 52,
+          "trend": "flat",
+          "rankJune": 1,
+          "rankNow": 1
+        },
+        {
+          "name": "Python",
+          "sharePct": 41,
+          "trend": "up",
+          "rankJune": 3,
+          "rankNow": 2
+        },
+        {
+          "name": "Excel",
+          "sharePct": 33,
+          "trend": "down",
+          "rankJune": 2,
+          "rankNow": 3
+        },
+        {
+          "name": "Power BI",
+          "sharePct": 29,
+          "trend": "up",
+          "rankJune": 5,
+          "rankNow": 4
+        },
+        {
+          "name": "Tableau",
+          "sharePct": 12,
+          "trend": "down",
+          "rankJune": 4,
+          "rankNow": 5
+        }
+      ],
+      "avgSalaryByMonth": [
+        {
+          "month": "2025-12",
+          "chf": 88400
+        },
+        {
+          "month": "2026-01",
+          "chf": 88900
+        },
+        {
+          "month": "2026-02",
+          "chf": 89300
+        },
+        {
+          "month": "2026-03",
+          "chf": 89100
+        },
+        {
+          "month": "2026-04",
+          "chf": 89800
+        },
+        {
+          "month": "2026-05",
+          "chf": 90200
+        },
+        {
+          "month": "2026-06",
+          "chf": 90600
+        },
+        {
+          "month": "2026-07",
+          "chf": 90400
+        },
+        {
+          "month": "2026-08",
+          "chf": 91000
+        },
+        {
+          "month": "2026-09",
+          "chf": 91300
+        },
+        {
+          "month": "2026-10",
+          "chf": 91700
+        },
+        {
+          "month": "2026-11",
+          "chf": 92100
+        }
+      ]
+    }
+  ],
+  "employers": [
+    {
+      "name": "Sample company A",
+      "canton": "Zürich",
+      "openJobs": {
+        "web": 12,
+        "it": 8,
+        "data": 5
+      },
+      "junior": true,
+      "partner": true,
+      "agency": false,
+      "careersUrl": "#"
+    },
+    {
+      "name": "Sample company B",
+      "canton": "Bern",
+      "openJobs": {
+        "web": 4,
+        "it": 9,
+        "data": 0
+      },
+      "junior": true,
+      "partner": false,
+      "agency": false,
+      "careersUrl": "#"
+    },
+    {
+      "name": "Sample agency C",
+      "canton": "Zürich",
+      "openJobs": {
+        "web": 20,
+        "it": 15,
+        "data": 6
+      },
+      "junior": false,
+      "partner": false,
+      "agency": true,
+      "careersUrl": "#"
+    },
+    {
+      "name": "Sample company D",
+      "canton": "Basel-Stadt",
+      "openJobs": {
+        "web": 6,
+        "it": 3,
+        "data": 7
+      },
+      "junior": false,
+      "partner": true,
+      "agency": false,
+      "careersUrl": "#"
+    },
+    {
+      "name": "Sample company E",
+      "canton": "Vaud",
+      "openJobs": {
+        "web": 3,
+        "it": 6,
+        "data": 2
+      },
+      "junior": true,
+      "partner": false,
+      "agency": false,
+      "careersUrl": "#"
+    },
+    {
+      "name": "Sample company F",
+      "canton": "Aargau",
+      "openJobs": {
+        "web": 2,
+        "it": 5,
+        "data": 0
+      },
+      "junior": false,
+      "partner": false,
+      "agency": false,
+      "careersUrl": "#"
+    },
+    {
+      "name": "Sample company G",
+      "canton": "Zürich",
+      "openJobs": {
+        "web": 9,
+        "it": 0,
+        "data": 4
+      },
+      "junior": true,
+      "partner": true,
+      "agency": false,
+      "careersUrl": "#"
+    },
+    {
+      "name": "Sample agency H",
+      "canton": "Geneva",
+      "openJobs": {
+        "web": 5,
+        "it": 4,
+        "data": 0
+      },
+      "junior": false,
+      "partner": false,
+      "agency": true,
+      "careersUrl": "#"
+    }
+  ],
+  "policy": [
+    {
+      "id": "p1",
+      "type": "motion",
+      "title": "Easier job changes for provisionally admitted people",
+      "publishedDate": "2026-11-18",
+      "sourceName": "Curia Vista",
+      "sourceUrl": "#",
+      "downloadedDate": "2026-11-20",
+      "summary": "Asks to drop the permit step when a provisionally admitted person changes employer. If passed, graduates could switch jobs faster.",
+      "impact": "high",
+      "isNew": true
+    },
+    {
+      "id": "p2",
+      "type": "law",
+      "title": "Job reporting list for 2027",
+      "publishedDate": "2026-11-12",
+      "sourceName": "SECO",
+      "sourceUrl": "#",
+      "downloadedDate": "2026-11-20",
+      "summary": "Occupations where employers must first report vacancies to the job centre. If IT support is on it, partners hiring for it take an extra step.",
+      "impact": "medium",
+      "isNew": true
+    },
+    {
+      "id": "p3",
+      "type": "stats",
+      "title": "Asylum statistics, October 2026",
+      "publishedDate": "2026-11-05",
+      "sourceName": "SEM",
+      "sourceUrl": "#",
+      "downloadedDate": "2026-11-20",
+      "summary": "Monthly figures on asylum applications and residence status by canton. Useful for outreach and class planning.",
+      "impact": "low",
+      "isNew": true
+    },
+    {
+      "id": "p4",
+      "type": "law",
+      "title": "Updated guidelines for the integration agenda",
+      "publishedDate": "2026-10-20",
+      "sourceName": "Fedlex",
+      "sourceUrl": "#",
+      "downloadedDate": "2026-11-13",
+      "summary": "Cantons get new guidelines on language and job coaching for refugees. This may change who pays for course places.",
+      "impact": "medium",
+      "isNew": false
+    },
+    {
+      "id": "p5",
+      "type": "motion",
+      "title": "Recognition of IT certificates from abroad",
+      "publishedDate": "2026-10-02",
+      "sourceName": "Curia Vista",
+      "sourceUrl": "#",
+      "downloadedDate": "2026-11-13",
+      "summary": "Asks for a simpler way to recognise IT diplomas earned abroad. Still in committee, so nothing changes yet.",
+      "impact": "low",
+      "isNew": false
+    }
+  ],
+  "sources": [
+    {
+      "name": "Adzuna",
+      "type": "API",
+      "usedIn": [
+        "Demand",
+        "Skills",
+        "Employers"
+      ],
+      "purpose": "Job ads, regions, companies hiring",
+      "url": "#",
+      "lastUpdate": "2026-11-20",
+      "attribution": "Jobs by Adzuna"
+    },
+    {
+      "name": "Adzuna salary history",
+      "type": "API",
+      "usedIn": [
+        "Overview"
+      ],
+      "purpose": "Average advertised salary per role, by month",
+      "url": "#",
+      "lastUpdate": "2026-11-20",
+      "attribution": "Jobs by Adzuna"
+    },
+    {
+      "name": "ESCO",
+      "type": "API",
+      "usedIn": [
+        "Skills"
+      ],
+      "purpose": "List of skills to match job ads",
+      "url": "#",
+      "lastUpdate": "2026-11-20",
+      "attribution": "ESCO / European Commission"
+    },
+    {
+      "name": "BFS",
+      "type": "Open data",
+      "usedIn": [
+        "Demand"
+      ],
+      "purpose": "Long-term job vacancy trend, canton map",
+      "url": "#",
+      "lastUpdate": "2026-08-12",
+      "attribution": "BFS, GEOSTAT"
+    },
+    {
+      "name": "Zefix",
+      "type": "To confirm",
+      "usedIn": [
+        "Employers"
+      ],
+      "purpose": "Company details",
+      "url": "#",
+      "lastUpdate": "2026-11-20",
+      "attribution": ""
+    },
+    {
+      "name": "Curia Vista",
+      "type": "Open data",
+      "usedIn": [
+        "Policy and people"
+      ],
+      "purpose": "Parliament motions",
+      "url": "#",
+      "lastUpdate": "2026-11-20",
+      "attribution": ""
+    },
+    {
+      "name": "Fedlex",
+      "type": "To confirm",
+      "usedIn": [
+        "Policy and people"
+      ],
+      "purpose": "Laws and rules",
+      "url": "#",
+      "lastUpdate": "2026-11-20",
+      "attribution": ""
+    },
+    {
+      "name": "SEM, SECO",
+      "type": "Published data",
+      "usedIn": [
+        "Policy and people"
+      ],
+      "purpose": "Asylum and integration rules, job reporting list, target group figures",
+      "url": "#",
+      "lastUpdate": "2026-11-20",
+      "attribution": ""
+    }
+  ]
+}
