@@ -1,12 +1,12 @@
-import { Controller, Get } from "@nestjs/common";
-import { StoreService } from "../core/store.service";
+import { Controller, Get, Query } from "@nestjs/common";
+import { SkillsService } from "./skills.service";
 
 @Controller("skills")
 export class SkillsController {
-  constructor(private readonly store: StoreService) {}
+  constructor(private readonly skills: SkillsService) {}
 
   @Get()
-  list() {
-    return this.store.latest("B");
+  list(@Query("role") role?: string) {
+    return this.skills.list(role);
   }
 }
