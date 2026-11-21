@@ -1,7 +1,6 @@
-import { Readable } from "node:stream";
-import { createInterface } from "node:readline";
 import { Injectable } from "@nestjs/common";
 import * as XLSX from "xlsx";
+import { SourceFileBlob } from "../core/connector";
 import { ConfigService } from "../core/config.service";
 import { SourceFileConfig } from "../core/config.types";
 import { ConnectorRegistry } from "../core/connector-registry.service";
@@ -12,13 +11,13 @@ type Row = unknown[];
 
 /**
  * SEM publishes aggregates as CSV and XLSX. There is no JSON API.
- * Files are read on refresh and discarded. Category names come from the
- * data file itself (Auslaendergruppe and the same columns listed in
- * Kodierung-AIG), so a second codebook is not parsed.
+ * The raw file is kept on the connector so refresh can store it in Postgres.
+ * Category names come from the data file itself.
  */
 @Injectable()
 export class SemConnector extends SourceConnector {
   readonly id = "sem";
+  takenFiles: SourceFileBlob[] = [];
 
   constructor(
     registry: ConnectorRegistry,
@@ -28,6 +27,7 @@ export class SemConnector extends SourceConnector {
   }
 
   async fetch(): Promise<Metric[]> {
+    this.takenFiles = [];
     const fetchedAt = new Date().toISOString();
     const files = this.files();
     const metrics: Metric[] = [];
@@ -75,6 +75,22 @@ export class SemConnector extends SourceConnector {
     return files;
   }
 
+  /** Download the published file and remember the bytes for the database. */
+  private async keep(file: SourceFileConfig, fetchedAt: string): Promise<Buffer> {
+    const content = await download(file.url);
+    this.takenFiles.push({
+      sourceId: this.id,
+      fileId: file.id,
+      format: file.format,
+      period: file.period,
+      page: file.page,
+      url: file.url,
+      content,
+      fetchedAt,
+    });
+    return content;
+  }
+
   /**
    * Workbook 6-20, sheet CH-Kt, October 2026 layout:
    * B (1) people in the asylum process
@@ -94,7 +110,7 @@ export class SemConnector extends SourceConnector {
     statusF: number;
     statusFInWork: number;
   }> {
-    const rows = await workbookRows(file);
+    const rows = workbookRows(file, await this.keep(file, fetchedAt));
     requireHeader(rows, 2, "Ausweis N");
     requireHeader(rows, 4, "tätige");
     requireHeader(rows, 7, "Ausweis F");
@@ -137,7 +153,7 @@ export class SemConnector extends SourceConnector {
     expectedStock: number,
     expectedInWork: number,
   ): Promise<Metric[]> {
-    const rows = await workbookRows(file);
+    const rows = workbookRows(file, await this.keep(file, fetchedAt));
     requireHeader(rows, 1, columnNeedle);
     requireText(rows, workbookNeedle);
     requireHeader(rows, 3, "Erwerbstätige");
@@ -160,7 +176,7 @@ export class SemConnector extends SourceConnector {
    * D (3) status S in work
    */
   private async statusS(file: SourceFileConfig, fetchedAt: string): Promise<Metric[]> {
-    const rows = await workbookRows(file);
+    const rows = workbookRows(file, await this.keep(file, fetchedAt));
     requireHeader(rows, 1, "vorübergehender Schutz");
     requireHeader(rows, 3, "Erwerbstätige");
     const total = totalRow(rows);
@@ -185,7 +201,7 @@ export class SemConnector extends SourceConnector {
     const cantons = new Map<string, number>();
     const origins = new Map<string, number>();
     let total = 0;
-    await eachCsvRow(file.url, (row) => {
+    await eachCsvRow(await this.keep(file, fetchedAt), file.url, (row) => {
       const count = persons(row.AnzahlPersonen);
       total += count;
       add(groups, row.Auslaendergruppe, count);
@@ -209,7 +225,7 @@ export class SemConnector extends SourceConnector {
   private async refugees(file: SourceFileConfig, fetchedAt: string): Promise<Metric[]> {
     const groups = new Map<string, number>();
     let total = 0;
-    await eachCsvRow(file.url, (row) => {
+    await eachCsvRow(await this.keep(file, fetchedAt), file.url, (row) => {
       const count = persons(row.AnzahlPersonen);
       total += count;
       add(groups, row.AuslaendergruppeFlu, count);
@@ -226,7 +242,7 @@ export class SemConnector extends SourceConnector {
   private async nonPermanentWork(file: SourceFileConfig, fetchedAt: string): Promise<Metric[]> {
     const groups = new Map<string, number>();
     let total = 0;
-    await eachCsvRow(file.url, (row) => {
+    await eachCsvRow(await this.keep(file, fetchedAt), file.url, (row) => {
       const count = persons(row.AnzahlPersonen);
       total += count;
       add(groups, row.Auslaendergruppe, count);
@@ -243,7 +259,7 @@ export class SemConnector extends SourceConnector {
   private async immigration(file: SourceFileConfig, fetchedAt: string): Promise<Metric[]> {
     const groups = new Map<string, number>();
     let total = 0;
-    await eachCsvRow(file.url, (row) => {
+    await eachCsvRow(await this.keep(file, fetchedAt), file.url, (row) => {
       const count = persons(row.AnzahlPersonen);
       total += count;
       add(groups, row.StaeNichtStaeBev, count);
@@ -325,23 +341,26 @@ function persons(value: string | undefined): number {
   return Number(value);
 }
 
-async function eachCsvRow(
-  url: string,
-  visit: (row: Record<string, string>) => void,
-): Promise<void> {
+async function download(url: string): Promise<Buffer> {
   const response = await fetch(url, {
     headers: { "User-Agent": "powercoders-radar" },
     signal: AbortSignal.timeout(120_000),
   });
-  if (!response.ok || !response.body) {
+  if (!response.ok) {
     throw new Error(`SEM download failed (${response.status}) for ${url}`);
   }
-  const lines = createInterface({
-    input: Readable.fromWeb(response.body as unknown as import("node:stream/web").ReadableStream),
-  });
+  return Buffer.from(await response.arrayBuffer());
+}
+
+function eachCsvRow(
+  content: Buffer,
+  url: string,
+  visit: (row: Record<string, string>) => void,
+): void {
+  const lines = content.toString("utf8").split(/\r?\n/);
   let header: string[] | null = null;
   let count = 0;
-  for await (const line of lines) {
+  for (const line of lines) {
     if (!line.trim()) {
       continue;
     }
@@ -388,15 +407,8 @@ function splitSemicolon(line: string): string[] {
   return cells;
 }
 
-async function workbookRows(file: SourceFileConfig): Promise<Row[]> {
-  const response = await fetch(file.url, {
-    headers: { "User-Agent": "powercoders-radar" },
-    signal: AbortSignal.timeout(120_000),
-  });
-  if (!response.ok) {
-    throw new Error(`SEM download failed (${response.status}) for ${file.url}`);
-  }
-  const book = XLSX.read(Buffer.from(await response.arrayBuffer()), { type: "buffer" });
+function workbookRows(file: SourceFileConfig, content: Buffer): Row[] {
+  const book = XLSX.read(content, { type: "buffer" });
   const sheet = book.Sheets["CH-Kt"];
   if (!sheet) {
     throw new Error(`SEM workbook ${file.id} is missing sheet CH-Kt`);

@@ -3,14 +3,12 @@ import { ConfigService } from "./config.service";
 import { ConnectorRegistry } from "./connector-registry.service";
 import { Metric } from "./metric";
 import { MetricsService } from "./metrics.service";
-import { StoreService } from "./store.service";
 
 @Injectable()
 export class RefreshService {
   constructor(
     private readonly registry: ConnectorRegistry,
     private readonly config: ConfigService,
-    private readonly store: StoreService,
     private readonly metricsStore: MetricsService,
   ) {}
 
@@ -28,8 +26,13 @@ export class RefreshService {
       }
       metrics.push(...(await connector.fetch()));
     }
-    await this.metricsStore.save(metrics);
-    this.store.replace(metrics);
+    const files = this.registry.all().flatMap((connector) => connector.takenFiles ?? []);
+    await this.metricsStore.save(metrics, files);
+    for (const connector of this.registry.all()) {
+      if (connector.takenFiles) {
+        connector.takenFiles = [];
+      }
+    }
     return metrics;
   }
 }

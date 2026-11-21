@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { PoolClient } from "pg";
+import { SourceFileBlob } from "./connector";
 import { DbService } from "./db.service";
 import { Metric, Question } from "./metric";
 
@@ -33,7 +34,7 @@ export class MetricsService {
   constructor(private readonly db: DbService) {}
 
   /** One snapshot per source. Rolls back the whole batch if any insert fails. */
-  async save(metrics: Metric[]): Promise<void> {
+  async save(metrics: Metric[], files: SourceFileBlob[] = []): Promise<void> {
     const groups = new Map<string, Metric[]>();
     for (const metric of metrics) {
       const rows = groups.get(metric.sourceId) ?? [];
@@ -57,6 +58,9 @@ export class MetricsService {
         const snapshotId = snapshot.rows[0].id;
         for (const row of rows) {
           await insertMetric(client, snapshotId, row);
+        }
+        for (const file of files.filter((item) => item.sourceId === sourceId)) {
+          await insertFile(client, snapshotId, file);
         }
       }
       await client.query("COMMIT");
@@ -101,6 +105,25 @@ export class MetricsService {
       fetchedAt: row?.fetched_at ? new Date(row.fetched_at).toISOString() : null,
     };
   }
+}
+
+async function insertFile(client: PoolClient, snapshotId: string, file: SourceFileBlob) {
+  await client.query(
+    `INSERT INTO source_files (
+       snapshot_id, source_id, file_id, format, period, page, source_url, content, fetched_at
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [
+      snapshotId,
+      file.sourceId,
+      file.fileId,
+      file.format,
+      file.period,
+      file.page,
+      file.url,
+      file.content,
+      file.fetchedAt,
+    ],
+  );
 }
 
 async function insertMetric(client: PoolClient, snapshotId: string, metric: Metric) {

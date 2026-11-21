@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { SourceFileBlob } from "../core/connector";
 import { ConfigService } from "../core/config.service";
 import { ConnectorRegistry } from "../core/connector-registry.service";
 import { Metric } from "../core/metric";
@@ -72,6 +73,7 @@ const IMPORTANT = [/vorläufig/i, /vorübergehend/i, /stellenmeldepflicht/i, /as
 @Injectable()
 export class FedlexConnector extends SourceConnector {
   readonly id = "fedlex";
+  takenFiles: SourceFileBlob[] = [];
 
   constructor(
     registry: ConnectorRegistry,
@@ -81,6 +83,7 @@ export class FedlexConnector extends SourceConnector {
   }
 
   async fetch(): Promise<Metric[]> {
+    this.takenFiles = [];
     const source = this.config.sources().find((item) => item.id === this.id);
     if (!source?.url) {
       throw new Error("Fedlex source is missing a SPARQL url");
@@ -118,6 +121,19 @@ export class FedlexConnector extends SourceConnector {
       }
       seen.add(uri);
       const textUrl = binding.text?.value;
+      const downloaded = textUrl ? await actText(textUrl) : undefined;
+      if (textUrl && downloaded) {
+        this.takenFiles.push({
+          sourceId: this.id,
+          fileId: present(binding.reference?.value) ?? uri,
+          format: "html",
+          period: date,
+          page: fedlexPage(uri),
+          url: textUrl,
+          content: downloaded.raw,
+          fetchedAt,
+        });
+      }
       metrics.push({
         label: title,
         value: date,
@@ -131,7 +147,7 @@ export class FedlexConnector extends SourceConnector {
         authority: present(binding.authority?.value),
         inForce: present(binding.enters?.value),
         textUrl,
-        text: textUrl ? await actText(textUrl) : undefined,
+        text: downloaded?.text,
       });
     }
     if (metrics.length === 0) {
@@ -150,8 +166,8 @@ function present(value: string | undefined): string | undefined {
   return trimmed ? trimmed : undefined;
 }
 
-/** Plain text of the whole official HTML file. A missing file does not fail the refresh. */
-async function actText(url: string): Promise<string | undefined> {
+/** Plain text plus the original HTML. A missing file does not fail the refresh. */
+async function actText(url: string): Promise<{ text: string; raw: Buffer } | undefined> {
   try {
     const response = await fetch(url, {
       headers: { "User-Agent": "powercoders-radar" },
@@ -160,8 +176,9 @@ async function actText(url: string): Promise<string | undefined> {
     if (!response.ok) {
       return undefined;
     }
-    const text = plainText(await response.text());
-    return text || undefined;
+    const raw = Buffer.from(await response.arrayBuffer());
+    const text = plainText(raw.toString("utf8"));
+    return text ? { text, raw } : undefined;
   } catch {
     return undefined;
   }
