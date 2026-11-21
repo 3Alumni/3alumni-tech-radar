@@ -1,30 +1,26 @@
 import { Controller, Get } from "@nestjs/common";
 import { ConfigService } from "../core/config.service";
-import { StoreService } from "../core/store.service";
+import { MetricsService } from "../core/metrics.service";
 
 @Controller("sources")
 export class SourcesController {
   constructor(
     private readonly config: ConfigService,
-    private readonly store: StoreService,
+    private readonly metrics: MetricsService,
   ) {}
 
   @Get()
-  list() {
-    const snapshot = this.store.snapshot();
-    return this.config.sources().map((source) => {
-      const metrics = snapshot.filter((metric) => metric.sourceId === source.id);
-      const fetchedAt = metrics.reduce<string | null>((latest, metric) => {
-        if (!latest || metric.fetchedAt > latest) {
-          return metric.fetchedAt;
-        }
-        return latest;
-      }, null);
-      return {
-        ...source,
-        metricCount: metrics.length,
-        fetchedAt,
-      };
-    });
+  async list() {
+    const sources = this.config.sources();
+    return Promise.all(
+      sources.map(async (source) => {
+        const latest = await this.metrics.latestForSource(source.id);
+        return {
+          ...source,
+          metricCount: latest.metricCount,
+          fetchedAt: latest.fetchedAt,
+        };
+      }),
+    );
   }
 }

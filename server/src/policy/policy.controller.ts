@@ -1,12 +1,12 @@
 import { Controller, Get } from "@nestjs/common";
-import { StoreService } from "../core/store.service";
+import { MetricsService } from "../core/metrics.service";
 
 @Controller("policy")
 export class PolicyController {
-  constructor(private readonly store: StoreService) {}
+  constructor(private readonly metrics: MetricsService) {}
 
   @Get()
   list() {
-    return this.store.latest("E");
+    return this.metrics.latest("E");
   }
 }

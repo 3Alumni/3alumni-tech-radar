@@ -11,7 +11,7 @@ export class TopicsController {
   }
 
   @Get(":id/preview")
-  preview(@Param("id") id: string) {
-    return { id, text: this.reports.preview(id) };
+  async preview(@Param("id") id: string) {
+    return { id, text: await this.reports.preview(id) };
   }
 }

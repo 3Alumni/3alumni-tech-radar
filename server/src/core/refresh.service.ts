@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { ConfigService } from "./config.service";
 import { ConnectorRegistry } from "./connector-registry.service";
 import { Metric } from "./metric";
+import { MetricsService } from "./metrics.service";
 import { StoreService } from "./store.service";
 
 @Injectable()
@@ -10,6 +11,7 @@ export class RefreshService {
     private readonly registry: ConnectorRegistry,
     private readonly config: ConfigService,
     private readonly store: StoreService,
+    private readonly metricsStore: MetricsService,
   ) {}
 
   async run(): Promise<Metric[]> {
@@ -26,6 +28,7 @@ export class RefreshService {
       }
       metrics.push(...(await connector.fetch()));
     }
+    await this.metricsStore.save(metrics);
     this.store.replace(metrics);
     return metrics;
   }
