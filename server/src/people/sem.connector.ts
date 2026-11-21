@@ -342,14 +342,19 @@ function persons(value: string | undefined): number {
 }
 
 async function download(url: string): Promise<Buffer> {
-  const response = await fetch(url, {
-    headers: { "User-Agent": "powercoders-radar" },
-    signal: AbortSignal.timeout(120_000),
-  });
-  if (!response.ok) {
-    throw new Error(`SEM download failed (${response.status}) for ${url}`);
+  try {
+    const response = await fetch(url, {
+      headers: { "User-Agent": "powercoders-radar" },
+      signal: AbortSignal.timeout(180_000),
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return Buffer.from(await response.arrayBuffer());
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "download failed";
+    throw new Error(`SEM download failed for ${url}: ${reason}`);
   }
-  return Buffer.from(await response.arrayBuffer());
 }
 
 function eachCsvRow(

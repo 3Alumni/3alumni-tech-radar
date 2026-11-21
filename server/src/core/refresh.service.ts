@@ -6,6 +6,8 @@ import { MetricsService } from "./metrics.service";
 
 @Injectable()
 export class RefreshService {
+  private running = false;
+
   constructor(
     private readonly registry: ConnectorRegistry,
     private readonly config: ConfigService,
@@ -13,6 +15,18 @@ export class RefreshService {
   ) {}
 
   async run(): Promise<Metric[]> {
+    if (this.running) {
+      throw new Error("A refresh is already running");
+    }
+    this.running = true;
+    try {
+      return await this.collect();
+    } finally {
+      this.running = false;
+    }
+  }
+
+  private async collect(): Promise<Metric[]> {
     const enabled = new Set(
       this.config
         .sources()

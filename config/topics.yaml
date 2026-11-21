@@ -7,6 +7,10 @@ topics:
     question: B
     role: it-support
 
+  - id: people-context
+    title: Target group context
+    question: D
+
   - id: policy-status-f
     title: New policy on status F
     question: E

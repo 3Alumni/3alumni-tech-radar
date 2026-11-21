@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "../core/config.service";
 import { TopicConfig } from "../core/config.types";
 import { MetricsService } from "../core/metrics.service";
-import { SummariesService } from "../summaries/summaries.service";
+import { Briefing, SummariesService } from "../summaries/summaries.service";
 
 @Injectable()
 export class ReportsService {
@@ -16,7 +16,7 @@ export class ReportsService {
     return this.config.topics();
   }
 
-  async preview(topicId: string): Promise<string> {
+  async preview(topicId: string): Promise<Briefing> {
     const topic = this.topics().find((item) => item.id === topicId);
     if (!topic) {
       throw new NotFoundException(`Unknown topic ${topicId}`);
@@ -24,6 +24,6 @@ export class ReportsService {
     const records = (await this.metrics.latest(topic.question)).filter(
       (metric) => !topic.role || metric.role === topic.role,
     );
-    return this.summaries.draft(records);
+    return this.summaries.draft(records, topic.title);
   }
 }
