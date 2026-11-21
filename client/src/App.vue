@@ -31,7 +31,7 @@ const view = computed(() => VIEWS[current.value])
 
 const LOADER_LABEL: Record<ViewId, string> = {
   overview: 'overview', demand: 'demand', skills: 'skills', employers: 'employers',
-  policy: 'policy and people', sources: 'sources', subscribe: 'email summary',
+  policy: 'new policies', sources: 'sources', subscribe: 'email summary',
 }
 const LOADER_MS = 700
 const LOADER_MS_REDUCED = 300

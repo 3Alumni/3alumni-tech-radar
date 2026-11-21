@@ -2,11 +2,10 @@
 import { ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import { ICON } from '@/lib/format'
-import { usePolicyRead } from '@/composables/usePolicyRead'
+import NotificationsPanel from './NotificationsPanel.vue'
 import { useSidebar } from '@/composables/useSidebar'
 import { useView } from '@/composables/useView'
 
-const { unreadCount: newPolicyCount } = usePolicyRead()
 const { drawerOpen, openDrawer } = useSidebar()
 const { current, go } = useView()
 const menuBtn = ref<HTMLButtonElement | null>(null)
@@ -40,16 +39,7 @@ defineExpose({ focusMenu: () => menuBtn.value?.focus() })
       >
         <Icon :path="ICON.mail" /><span class="mail-text">Get email summary</span>
       </button>
-      <button
-        type="button"
-        class="icon-btn has-tip"
-        :aria-label="`Policy and people: ${newPolicyCount} new items`"
-        @click="go('policy')"
-      >
-        <Icon :path="ICON.bell" />
-        <span v-if="newPolicyCount" class="badge" aria-hidden="true">{{ newPolicyCount }}</span>
-        <span class="tip tip-b tip-r" aria-hidden="true">{{ newPolicyCount }} new policy items</span>
-      </button>
+      <NotificationsPanel />
     </div>
   </header>
 </template>
@@ -67,11 +57,6 @@ defineExpose({ focusMenu: () => menuBtn.value?.focus() })
 .logo img { width: 168px; height: auto; }
 .topbar-title { grid-column: 2; font-size: 18px; line-height: 24px; font-weight: 700; text-align: center; white-space: nowrap; }
 .topbar-end { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: var(--space-3); }
-.badge {
-  position: absolute; top: -10px; right: -10px; min-width: 22px; height: 22px; padding: 0 5px;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--color-action); color: var(--color-on-action); font-size: 14px; line-height: 1; font-weight: 700;
-}
 @media (max-width: 1023px) {
   .topbar { padding: 0 var(--space-5); grid-template-columns: 1fr auto; }
   .menu-btn { display: inline-flex; }

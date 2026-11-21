@@ -19,7 +19,11 @@ export function usePolicyRead() {
   const { snapshot } = useSnapshot()
 
   const isUnread = (p: { id: string; isNew: boolean }) => p.isNew && !read.value.has(p.id)
-  const unreadCount = computed(() => (snapshot.value?.policy ?? []).filter(isUnread).length)
+  /** New items this viewer has not opened yet, newest first. */
+  const unreadItems = computed(() =>
+    (snapshot.value?.policy ?? []).filter(isUnread).sort((x, y) => y.publishedDate.localeCompare(x.publishedDate)),
+  )
+  const unreadCount = computed(() => unreadItems.value.length)
 
   function markRead(id: string) {
     if (read.value.has(id)) return
@@ -31,5 +35,5 @@ export function usePolicyRead() {
     }
   }
 
-  return { isUnread, unreadCount, markRead }
+  return { isUnread, unreadItems, unreadCount, markRead }
 }

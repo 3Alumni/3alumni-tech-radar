@@ -17,8 +17,7 @@ const items = computed(() => (showOlder.value ? policySorted.value : policySorte
 <template>
   <section class="view" aria-labelledby="pol-h">
     <div class="card-head">
-      <h1 id="pol-h" class="h1">Policy and people</h1>
-      <p class="muted">New laws, motions and figures that affect our participants.</p>
+      <h1 id="pol-h" class="h1">New policies</h1>
     </div>
     <DataAlerts />
 
@@ -61,10 +60,11 @@ const items = computed(() => (showOlder.value ? policySorted.value : policySorte
 
 <style scoped>
 .view { gap: var(--space-4); }
-.tl { border-top: var(--border) solid var(--color-text); }
+/* The list bleeds 16px each side so the rows' backgrounds and the top rule share one full width. */
+.tl { margin: 0 calc(-1 * var(--space-3)); border-top: var(--border) solid var(--color-border); }
 .tl-item {
   display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: var(--space-3);
-  padding: 20px var(--space-3); margin: 0 calc(-1 * var(--space-3));
+  padding: 20px var(--space-3);
   border-bottom: var(--border) solid var(--color-border); transition: background-color .12s;
 }
 .tl-item { cursor: pointer; }

@@ -20,7 +20,7 @@ export const NAV_GENERAL: NavItem[] = [
 const VIEW_IDS: ViewId[] = ['overview', 'demand', 'skills', 'employers', 'policy', 'sources', 'subscribe']
 const TITLES: Record<ViewId, string> = {
   overview: 'Overview', demand: 'Demand', skills: 'Skills', employers: 'Employers',
-  policy: 'Policy and people', sources: 'Sources', subscribe: 'Get email summary',
+  policy: 'New policies', sources: 'Sources', subscribe: 'Get email summary',
 }
 
 function fromHash(): ViewId {
