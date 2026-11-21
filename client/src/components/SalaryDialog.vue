@@ -29,7 +29,8 @@ const aria = computed(() =>
 )
 const count = computed(() => series.value.length)
 const { active, onKey, onFocus, onBlur, hover } = useActiveIndex(count)
-const tipCls = (i: number) => (i < 2 ? 'tip tip-l' : i > count.value - 3 ? 'tip tip-r' : 'tip')
+// Outer columns align their tip to the edge so it never overflows the dialog on narrow screens.
+const tipCls = (i: number) => (i < 3 ? 'tip tip-l' : i > count.value - 5 ? 'tip tip-r' : 'tip')
 
 watch(roleId, async (id) => {
   await nextTick()
@@ -136,5 +137,8 @@ function onBackdrop(e: MouseEvent) {
   /* Too narrow for 12 labels: keep the first and the latest month */
   .col-val:not(.ends) { visibility: hidden; }
   .col-val { font-size: 12px; }
+  /* First/last value labels are wider than their column: grow inward, not off the edge */
+  .col:first-child .col-val { display: flex; justify-content: flex-start; }
+  .col:last-child .col-val { display: flex; justify-content: flex-end; }
 }
 </style>

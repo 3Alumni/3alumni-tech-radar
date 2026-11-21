@@ -222,6 +222,6 @@ function openSalary() {
 @media (max-width: 639px) {
   .tile { padding: var(--space-3); }
   .tile-v { font-size: 22px; line-height: 28px; }
-  .rank-row { grid-template-columns: 96px minmax(0, 1fr) 52px; gap: var(--space-2); }
+  .rank-row { grid-template-columns: 120px minmax(0, 1fr) 44px; gap: var(--space-2); }
 }
 </style>

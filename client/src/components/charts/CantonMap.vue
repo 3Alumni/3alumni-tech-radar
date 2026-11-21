@@ -113,9 +113,29 @@ const hoverId = ref<number | null>(null)
 const tip = computed(() => cantonPaths.value.find((c) => c.id === hoverId.value) ?? null)
 // Keep tooltip and label inside the card: anchor them away from the nearest edge.
 const side = (x: number) => (x < width.value * 0.28 ? 'start' : x > width.value * 0.72 ? 'end' : 'mid')
-const numberLabels = computed(() =>
-  cantonPaths.value.filter((c) => c.data && c.id !== labelled.value?.id && c.id !== hoverId.value),
-)
+// Number labels, biggest first; a label that would overlap one already placed (or the name label) is
+// skipped, so small screens show fewer numbers instead of a pile-up. The list below has them all.
+const numberLabels = computed(() => {
+  type Box = [number, number, number, number]
+  const hit = (a: Box, b: Box) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3]
+  const placed: Box[] = []
+  const l = labelled.value
+  if (l?.data) {
+    const w = Math.max(l.name.length, fmtNum(l.data.count).length) * 9 + 14
+    const x0 = l.cx > width.value * 0.7 ? l.cx - w : l.cx - 6
+    placed.push([x0, l.cy - 22, x0 + w, l.cy + 18])
+  }
+  return cantonPaths.value
+    .filter((c) => c.data && c.id !== l?.id && c.id !== hoverId.value)
+    .sort((a, b) => b.data!.count - a.data!.count)
+    .filter((c) => {
+      const half = (fmtNum(c.data!.count).length * 8.5) / 2 + 3
+      const box: Box = [c.cx - half, c.cy - 9, c.cx + half, c.cy + 9]
+      if (placed.some((p) => hit(p, box))) return false
+      placed.push(box)
+      return true
+    })
+})
 const showLabel = computed(() => labelled.value && labelled.value.id !== hoverId.value)
 const labelEnd = computed(() => !!labelled.value && labelled.value.cx > width.value * 0.7)
 

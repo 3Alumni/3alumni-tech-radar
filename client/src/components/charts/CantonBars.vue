@@ -33,11 +33,10 @@ const level = computed(() => shadeLevel(top.value))
           <span
             :class="['bar-fill', 'grow-x', `shade-${level(c.count)}`, { sel: c.canton === selected }]"
             :style="{ width: x(c.count) + '%', '--i': i }"
-          >
-            <span class="tip tip-in" aria-hidden="true">{{ c.canton === selected ? 'Click to show all of Switzerland' : 'Click to show only ' + c.canton }}</span>
-          </span>
+          />
         </span>
         <span class="bar-val num">{{ fmtNum(c.count) }}</span>
+        <span class="tip tip-r" aria-hidden="true">{{ c.canton === selected ? 'Click to show all of Switzerland' : 'Click to show only ' + c.canton }}</span>
       </button>
     </li>
   </ul>
@@ -62,7 +61,6 @@ const level = computed(() => shadeLevel(top.value))
   position: relative; display: block; height: 100%; min-width: 4px;
   transition: width .5s var(--ease-out), background-color .15s, box-shadow .15s;
 }
-.bar-fill .tip { left: 100%; }
 
 .bar-val { display: flex; justify-content: flex-end; font-size: 15px; font-weight: 600; color: var(--color-text-muted); transition: color .15s; }
 
