@@ -86,6 +86,7 @@ function onBackdrop(e: MouseEvent) {
             aria-hidden="true"
             @mouseenter="hover(i)"
           >
+            <span :class="['col-val', { ends: i === 0 || i === count - 1 }]">{{ (m.chf / 1000).toFixed(1) }}k</span>
             <span :class="['col-bar', 'grow-y', { sel: i === count - 1 }]" :style="{ height: y(m.chf) + '%', '--i': i }" />
             <span :class="tipCls(i)"><b>{{ fmtChf(m.chf) }}</b> · {{ fmtMonth(m.month) }}</span>
           </div>
@@ -98,7 +99,7 @@ function onBackdrop(e: MouseEvent) {
         </p>
       </div>
       <p class="small muted">
-        Average advertised salary in job ads, gross per year, all of Switzerland<template v-if="isSample"> · Sample data</template>
+        Average advertised salary in job ads, gross per year, all of Switzerland · k = CHF thousand<template v-if="isSample"> · Sample data</template>
       </p>
     </div>
   </dialog>
@@ -113,12 +114,14 @@ function onBackdrop(e: MouseEvent) {
 .dlg-in { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
 .dlg-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
 .cols { display: grid; gap: 6px; align-items: end; height: 180px; border-bottom: var(--border) solid var(--color-border); }
-.col { position: relative; height: 100%; display: flex; align-items: flex-end; cursor: crosshair; transition: opacity .15s; }
+.col { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: stretch; cursor: crosshair; transition: opacity .15s; }
 .cols:hover .col { opacity: .45; }
 .cols:hover .col:hover, .col.on { opacity: 1; }
 .col-bar { display: block; width: 100%; background: var(--color-text-muted); transition: height .4s var(--ease-out), background-color .15s; }
 .col:hover .col-bar:not(.sel), .col.on .col-bar:not(.sel) { background: var(--color-text); }
 .col-bar.sel { background: var(--color-action); }
+.col-val { font-size: 14px; line-height: 20px; font-weight: 600; text-align: center; white-space: nowrap; color: var(--color-text); font-variant-numeric: tabular-nums; margin-bottom: 4px; letter-spacing: -.02em; }
+.cols { padding-top: 24px; height: 204px; }
 .col .tip { bottom: auto; top: -8px; }
 .col.on .tip { opacity: 1; visibility: visible; }
 .col-months { display: grid; gap: 6px; text-align: center; font-size: 14px; line-height: 20px; color: var(--color-text-muted); margin-top: var(--space-1); }
@@ -127,5 +130,8 @@ function onBackdrop(e: MouseEvent) {
   .seg button { padding: 0 12px; font-size: 14px; }
   .cols, .col-months { gap: 2px; }
   .col-months { font-size: 12px; }
+  /* Too narrow for 12 labels: keep the first and the latest month */
+  .col-val:not(.ends) { visibility: hidden; }
+  .col-val { font-size: 12px; }
 }
 </style>

@@ -2,7 +2,6 @@
 import Icon from '@/components/ui/Icon.vue'
 import DataAlerts from '@/components/ui/DataAlerts.vue'
 import CardState from '@/components/ui/CardState.vue'
-import SourceChip from '@/components/ui/SourceChip.vue'
 import RoleRegionFilters from '@/components/ui/RoleRegionFilters.vue'
 import TrendLine from '@/components/charts/TrendLine.vue'
 import CantonBars from '@/components/charts/CantonBars.vue'
@@ -32,7 +31,6 @@ const kpiShown = useCountUp(ins.kpiValue)
       <article class="card" aria-labelledby="kpi-q">
         <div class="card-head">
           <h2 id="kpi-q" class="q">Is there work for {{ ins.roleLabel.value }}?</h2>
-          <p v-if="canShow" aria-live="polite">{{ ins.kpiAnswer.value }}</p>
         </div>
         <CardState :lines="[40, 100]" :line-height="40">
           <template #empty><b>No job ads yet</b> for this role and region. Try All of Switzerland.</template>
@@ -47,7 +45,6 @@ const kpiShown = useCountUp(ins.kpiValue)
             Average salary for {{ ins.roleLabel.value }}<Icon :path="ICON.arrow" small />
           </button>
           <TrendLine :points="ins.trendPoints.value" :summary="ins.trendAria.value" />
-          <SourceChip :names="['Adzuna']" />
         </CardState>
       </article>
 
@@ -68,7 +65,6 @@ const kpiShown = useCountUp(ins.kpiValue)
             :selected="ins.region.value"
             @pick="ins.toggleRegion"
           />
-          <SourceChip :names="['Adzuna', 'BFS']" />
         </CardState>
       </article>
     </div>

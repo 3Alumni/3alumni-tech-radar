@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, ref, watch } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
-import { ICON, fmtDate } from '@/lib/format'
+import { ICON } from '@/lib/format'
 import { NAV_GENERAL, NAV_MAIN, useView, type NavItem } from '@/composables/useView'
 import { useSidebar } from '@/composables/useSidebar'
 import { useSnapshot } from '@/composables/useSnapshot'
@@ -9,7 +9,7 @@ import { useSnapshot } from '@/composables/useSnapshot'
 const emit = defineEmits<{ closed: [] }>()
 const { current, go } = useView()
 const { collapsed, drawerOpen, toggleCollapsed, closeDrawer } = useSidebar()
-const { newPolicyCount, snapshot, isSample } = useSnapshot()
+const { newPolicyCount } = useSnapshot()
 const closeBtn = ref<HTMLButtonElement | null>(null)
 
 const groups: { title: string; items: NavItem[] }[] = [
@@ -45,9 +45,6 @@ watch(drawerOpen, async (open) => {
   >
     <div class="side-in">
       <div class="side-brand">
-        <button type="button" class="side-logo" aria-label="Market Radar by Powercoders: go to Overview" @click="pick('overview')">
-          <img src="/powercoders.svg" alt="" width="150" height="18" />
-        </button>
         <button
           type="button"
           class="side-toggle"
@@ -85,24 +82,6 @@ watch(drawerOpen, async (open) => {
         </template>
       </nav>
 
-      <div class="side-foot">
-        <div class="side-label side-meta">
-          <span v-if="isSample" class="tag tag-sample has-tip" tabindex="0">
-            Sample data<span class="tip">Placeholder figures until the real data snapshot arrives</span>
-          </span>
-          <span v-if="snapshot" class="small muted">Data snapshot: {{ fmtDate(snapshot.snapshotDate) }}</span>
-        </div>
-        <button
-          type="button"
-          class="btn btn-primary side-cta has-tip"
-          :aria-current="current === 'subscribe' ? 'page' : undefined"
-          @click="pick('subscribe')"
-        >
-          <Icon :path="ICON.mail" />
-          <span class="side-label">Get email summary</span>
-          <span class="tip tip-side" aria-hidden="true">Get email summary</span>
-        </button>
-      </div>
     </div>
   </aside>
 </template>
@@ -117,11 +96,8 @@ watch(drawerOpen, async (open) => {
   position: sticky; top: calc(var(--header-h) + 1px);
   display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3) 12px;
 }
-.side-brand { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); padding: var(--space-2) 0 var(--space-4) 12px; }
-.side-logo { display: flex; background: transparent; border: 0; padding: 0; cursor: pointer; }
-.side-logo img { width: 150px; height: auto; }
-.side.collapsed .side-brand { justify-content: center; padding-left: 0; }
-.side.collapsed .side-logo { display: none; }
+.side-brand { display: flex; justify-content: flex-end; }
+.side.collapsed .side-brand { justify-content: center; }
 
 .side-toggle, .side-close {
   width: 40px; height: 40px; flex: none; display: inline-flex; align-items: center; justify-content: center;
@@ -148,16 +124,12 @@ watch(drawerOpen, async (open) => {
   background: var(--color-action); color: var(--color-on-action); font-size: 14px; line-height: 1; font-weight: 700;
 }
 
-.side-foot { margin-top: var(--space-4); display: flex; flex-direction: column; gap: 12px; padding-top: var(--space-3); border-top: var(--border) solid var(--color-border); }
-.side-meta { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }
-.side-cta { position: relative; width: 100%; justify-content: center; }
 
 /* Collapsed rail: icons only, labels stay for screen readers, tooltips on the right */
 .side.collapsed .side-link { justify-content: center; padding: 0; }
 .side.collapsed .side-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .side.collapsed .side-group { padding: var(--space-2) 0 0; }
 .side.collapsed .side-badge { position: absolute; top: 4px; right: 6px; min-width: 18px; height: 18px; padding: 0 4px; font-size: 12px; }
-.side.collapsed .side-cta { padding: 0; }
 .tip-side { bottom: auto; top: 50%; left: calc(100% + 12px); transform: translateY(-50%); display: none; }
 .tip-side::after { top: 50%; left: auto; right: 100%; margin: -5px 0 0; border-top-color: transparent; border-right-color: var(--color-text); }
 .side.collapsed .tip-side { display: block; }

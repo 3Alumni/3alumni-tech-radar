@@ -45,6 +45,10 @@ const focusPt = computed(() => {
   const p = props.points[focusIdx.value]
   return p ? { ...p, x: px(p), y: py(p) } : null
 })
+// Every month carries its value; the focused one is shown in the callout instead.
+const valueLabels = computed(() =>
+  props.points.map((p, i) => ({ key: p.key, i, x: px(p), y: py(p), text: fmtNum(p.value) })),
+)
 const lastPt = computed(() => {
   const p = props.points[lastIdx.value]
   return p ? { x: px(p), y: py(p) } : null
@@ -55,6 +59,8 @@ const calloutSide = computed(() => {
 })
 
 let first = true
+// Markers only animate between data states, never from the empty first layout.
+const settled = ref(false)
 function draw() {
   if (!lineEl.value || !areaEl.value || !width.value) return
   const l = select(lineEl.value)
@@ -77,14 +83,27 @@ function draw() {
   } else if (first || still) {
     l.interrupt('draw').attr('stroke-dasharray', null).attr('stroke-dashoffset', null).attr('d', dLine.value)
     a.interrupt('draw').attr('opacity', 1).attr('d', dArea.value)
+  } else if (!settled.value) {
+    l.attr('d', dLine.value)
+    a.attr('d', dArea.value)
   } else {
     l.transition().duration(500).ease(easeCubicOut).attr('d', dLine.value)
     a.transition().duration(500).ease(easeCubicOut).attr('d', dArea.value)
   }
   first = false
+  requestAnimationFrame(() => (settled.value = true))
 }
 onMounted(draw)
 watch([dLine, dArea], draw)
+// Resizing is not a data change: jump markers to the new layout instead of sliding them.
+watch(
+  width,
+  () => {
+    settled.value = false
+    requestAnimationFrame(() => requestAnimationFrame(() => (settled.value = true)))
+  },
+  { flush: 'sync' }, // must run before the redraw watcher above
+)
 onBeforeUnmount(() => {
   if (lineEl.value) select(lineEl.value).interrupt().interrupt('draw')
   if (areaEl.value) select(areaEl.value).interrupt().interrupt('draw')
@@ -95,7 +114,7 @@ onBeforeUnmount(() => {
   <div class="trend-wrap">
     <div
       ref="box"
-      class="trend"
+      :class="['trend', { settled }]"
       role="img"
       tabindex="0"
       :aria-label="summary + '. Use arrow keys to read each month.'"
@@ -113,6 +132,16 @@ onBeforeUnmount(() => {
           :x1="focusPt.x" :x2="focusPt.x" :y1="TOP - 8" :y2="BOTTOM"
         />
         <path ref="lineEl" class="line" />
+        <g
+          v-for="v in valueLabels"
+          v-show="v.i !== focusIdx"
+          :key="v.key"
+          class="vlabel"
+          :style="{ transform: `translate(${v.x}px, ${v.y}px)` }"
+        >
+          <circle r="3.5" class="vdot" />
+          <text y="-12" text-anchor="middle">{{ v.text }}</text>
+        </g>
         <g v-if="lastPt" class="ring" :style="{ transform: `translate(${lastPt.x}px, ${lastPt.y}px)` }">
           <circle r="7" class="ring-halo" />
           <circle r="6" class="ring-dot" />
@@ -132,8 +161,7 @@ onBeforeUnmount(() => {
         :style="{ left: focusPt.x + 'px', top: focusPt.y + 'px' }"
         aria-hidden="true"
       >
-        <template v-if="active === null">{{ focusPt.label }}</template>
-        <template v-else><b>{{ fmtNum(focusPt.value) }}</b> {{ unitText }} · {{ focusPt.label }}</template>
+        <b>{{ fmtNum(focusPt.value) }}</b><template v-if="active !== null"> {{ unitText }}</template> · {{ focusPt.label }}
       </div>
 
       <div class="trend-hit" :style="{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }" aria-hidden="true">
@@ -158,9 +186,15 @@ onBeforeUnmount(() => {
 .cross { stroke: var(--color-text); stroke-width: 1; }
 
 /* Latest month: white ring on the red line, with a quiet halo once the line has drawn. */
-.ring, .marker { transition: transform .5s var(--ease-out); }
+.settled .ring, .settled .marker { transition: transform .5s var(--ease-out); }
 .ring-dot { fill: var(--color-surface); stroke: var(--color-action); stroke-width: 3; }
 .ring-halo { fill: none; stroke: var(--color-action); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: halo 1.6s var(--ease-out) 1s 2 both; }
+.settled .vlabel { transition: transform .5s var(--ease-out); }
+.vlabel text {
+  font-size: 14px; font-weight: 600; fill: var(--color-text); font-variant-numeric: tabular-nums;
+  paint-order: stroke; stroke: var(--color-surface); stroke-width: 4px; stroke-linejoin: round;
+}
+.vdot { fill: var(--color-action); }
 .marker circle { fill: var(--color-surface); stroke: var(--color-action); stroke-width: 2.5; }
 
 /* Callout above the focused point: the month by default, value + month while exploring. */
@@ -169,8 +203,8 @@ onBeforeUnmount(() => {
   background: var(--color-surface); color: var(--color-text); border: var(--border) solid var(--color-border);
   box-shadow: 0 2px 0 var(--color-border); font-size: 14px; line-height: 20px; font-weight: 600;
   padding: 6px 12px; white-space: nowrap; pointer-events: none;
-  transition: left .5s var(--ease-out), top .5s var(--ease-out);
 }
+.settled .callout { transition: left .5s var(--ease-out), top .5s var(--ease-out); }
 .callout b { font-weight: 700; font-variant-numeric: tabular-nums; }
 .callout::after {
   content: ""; position: absolute; top: 100%; left: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px;

@@ -3,7 +3,6 @@ import { computed, ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import DataAlerts from '@/components/ui/DataAlerts.vue'
 import CardState from '@/components/ui/CardState.vue'
-import SourceChip from '@/components/ui/SourceChip.vue'
 import RoleRegionFilters from '@/components/ui/RoleRegionFilters.vue'
 import { ICON, fmtNum, isExternalUrl } from '@/lib/format'
 import { useInsights } from '@/composables/useInsights'
@@ -80,7 +79,6 @@ const list = computed(() => (showAll.value ? ins.employersAll.value : ins.employ
           :aria-expanded="showAll"
           @click="showAll = !showAll"
         >{{ showAll ? 'Show fewer' : `Show all ${ins.employersAll.value.length}` }}</button>
-        <SourceChip :names="['Adzuna', 'Zefix']" />
       </div>
     </CardState>
   </section>

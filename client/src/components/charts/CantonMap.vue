@@ -100,6 +100,9 @@ const hoverId = ref<number | null>(null)
 const tip = computed(() => cantonPaths.value.find((c) => c.id === hoverId.value) ?? null)
 // Keep tooltip and label inside the card: anchor them away from the nearest edge.
 const side = (x: number) => (x < width.value * 0.28 ? 'start' : x > width.value * 0.72 ? 'end' : 'mid')
+const numberLabels = computed(() =>
+  cantonPaths.value.filter((c) => c.data && c.id !== labelled.value?.id && c.id !== hoverId.value),
+)
 const showLabel = computed(() => labelled.value && labelled.value.id !== hoverId.value)
 const labelEnd = computed(() => !!labelled.value && labelled.value.cx > width.value * 0.7)
 
@@ -142,6 +145,16 @@ function pick(c: { data?: CantonCount }) {
         </g>
         <g class="lakes" aria-hidden="true">
           <path v-for="l in lakePaths" :key="l.k" :d="l.d" class="lake" />
+        </g>
+        <g class="nums" aria-hidden="true">
+          <text
+            v-for="c in numberLabels"
+            :key="c.id"
+            :x="c.cx"
+            :y="c.cy + 5"
+            text-anchor="middle"
+            :class="['num-label', { dark: c.lvl >= 3 && !c.on }]"
+          >{{ fmtNum(c.data!.count) }}</text>
         </g>
         <g v-if="labelled && showLabel" class="label" aria-hidden="true" :transform="`translate(${labelled.cx},${labelled.cy})`">
           <circle r="4" class="label-dot" />
@@ -196,7 +209,11 @@ function pick(c: { data?: CantonCount }) {
 .canton:focus-visible { stroke: var(--color-text); stroke-width: 3; }
 .lake { fill: var(--color-surface); stroke: var(--color-border); stroke-width: .5; pointer-events: none; }
 
-.label { pointer-events: none; }
+.label, .nums { pointer-events: none; }
+.num-label {
+  font-size: 14px; font-weight: 700; fill: var(--color-text); font-variant-numeric: tabular-nums;
+  paint-order: stroke; stroke: var(--color-surface); stroke-width: 3px; stroke-linejoin: round;
+}
 .label-dot { fill: var(--color-surface); stroke: var(--color-text); stroke-width: 2; }
 .label-name, .label-val {
   font-size: 14px; fill: var(--color-text);

@@ -50,14 +50,14 @@ export function useView() {
     }
     window.location.hash = id
     window.scrollTo(0, 0)
-    // Move focus to the new view heading so keyboard and screen-reader users land in the content.
-    requestAnimationFrame(focusContent)
+    // Focus moves to the new heading once the tab has loaded (App.vue calls focusContent).
   }
 
   return { current: computed(() => current.value), go }
 }
 
-function focusContent() {
+/** Move focus to the current view's heading so keyboard and screen-reader users land in the content. */
+export function focusContent() {
   const h = document.querySelector<HTMLElement>('#content h1')
   if (h) {
     h.setAttribute('tabindex', '-1')

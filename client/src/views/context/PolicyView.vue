@@ -4,7 +4,7 @@ import Icon from '@/components/ui/Icon.vue'
 import DataAlerts from '@/components/ui/DataAlerts.vue'
 import CardState from '@/components/ui/CardState.vue'
 import { ICON, fmtDate, isExternalUrl } from '@/lib/format'
-import { useInsights, IMPACT_LABEL, POLICY_TYPE_LABEL } from '@/composables/useInsights'
+import { useInsights, POLICY_TYPE_LABEL } from '@/composables/useInsights'
 import { useSnapshot } from '@/composables/useSnapshot'
 
 const PAGE = 3
@@ -25,8 +25,7 @@ const items = computed(() => (showOlder.value ? policySorted.value : policySorte
     <CardState :empty="!policySorted.length">
       <template #empty><b>No policy items yet.</b> Check again after the next data update.</template>
       <p v-if="snapshot?.previousSnapshotDate" class="new-bar">
-        <span class="tag tag-new">{{ newPolicyCount }} new</span>
-        <span>since {{ fmtDate(snapshot.previousSnapshotDate) }}</span>
+        <b>{{ newPolicyCount }} new</b>&nbsp;since {{ fmtDate(snapshot.previousSnapshotDate) }}
       </p>
       <ol class="tl">
         <li v-for="p in items" :key="p.id" class="tl-item">
@@ -34,10 +33,6 @@ const items = computed(() => (showOlder.value ? policySorted.value : policySorte
             <b class="date">{{ fmtDate(p.publishedDate) }}</b><br />{{ POLICY_TYPE_LABEL[p.type] }}
           </p>
           <div class="tl-body">
-            <div class="tags">
-              <span v-if="p.isNew" class="tag tag-new">New</span>
-              <span :class="['tag', 'imp-' + p.impact]">{{ IMPACT_LABEL[p.impact] }}</span>
-            </div>
             <h2 class="q">{{ p.title }}</h2>
             <p>{{ p.summary }}</p>
             <p class="small muted meta">
@@ -69,7 +64,7 @@ const items = computed(() => (showOlder.value ? policySorted.value : policySorte
 
 <style scoped>
 .view { gap: var(--space-4); }
-.new-bar { display: flex; align-items: center; gap: 12px; }
+.new-bar { display: flex; align-items: center; }
 .tl { border-top: var(--border) solid var(--color-text); }
 .tl-item {
   display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: var(--space-3);

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import DataAlerts from '@/components/ui/DataAlerts.vue'
 import CardState from '@/components/ui/CardState.vue'
-import SourceChip from '@/components/ui/SourceChip.vue'
 import RoleRegionFilters from '@/components/ui/RoleRegionFilters.vue'
 import SkillBars from '@/components/charts/SkillBars.vue'
 import { useInsights } from '@/composables/useInsights'
@@ -31,7 +30,6 @@ const ins = useInsights()
           <template #empty><b>No skills yet.</b> There are no job ads in this snapshot.</template>
           <SkillBars :skills="ins.skills.value" :role-label="ins.roleLabel.value" :highlight="ins.risingSkill.value" />
           <p class="small muted">% of {{ ins.roleLabel.value }} job ads that name the skill</p>
-          <SourceChip :names="['ESCO', 'Adzuna']" />
         </CardState>
       </article>
     </div>
