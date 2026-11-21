@@ -54,10 +54,13 @@ function resetFilters() {
 
 const TAG_LABEL: Record<string, string> = {
   junior: 'Junior',
+  'mid-level': 'Mid-level',
+  senior: 'Senior',
   internship: 'Internship',
   apprenticeship: 'Apprenticeship',
-  'part-time': 'Part-time',
   graduate: 'Graduate',
+  'part-time': 'Part-time',
+  'full-time': 'Full-time',
 }
 
 function tagLabel(tag: string) {
@@ -66,7 +69,7 @@ function tagLabel(tag: string) {
 
 function tagClass(tag: string) {
   if (tag === 'junior' || tag === 'graduate') return 'tag-junior'
-  if (tag === 'internship' || tag === 'apprenticeship') return 'tag-partner'
+  if (tag === 'internship' || tag === 'apprenticeship' || tag === 'part-time') return 'tag-partner'
   return 'tag-agency'
 }
 </script>

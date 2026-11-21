@@ -7,7 +7,7 @@ loadEnv(resolve(process.cwd(), ".env"));
 loadEnv(resolve(process.cwd(), "../.env"));
 
 const model = "gpt-6-luna";
-const allowed = ["junior", "internship", "apprenticeship", "part-time", "graduate"];
+const allowed = ["junior", "mid-level", "senior", "internship", "apprenticeship", "graduate", "part-time", "full-time"];
 const db = new pg.Client({
   connectionString: process.env.DATABASE_URL ?? "postgres://radar:radar@localhost:5433/radar",
 });
@@ -49,10 +49,14 @@ for (const [key, company] of byCompany) {
         `Choose at most 3 tags from this list only: ${allowed.join(", ")}. ` +
         "Add a tag only when the ad explicitly offers that kind of role. " +
         "junior means the word junior or an entry-level hire. " +
+        "mid-level means mid-level, medior, or experienced without being senior. " +
+        "senior means the word senior, lead, or a clearly experienced hire. " +
         "internship means Praktikum, stage, or internship. " +
         "apprenticeship means Lehre, Lehrstelle, or apprenticeship. " +
-        "part-time means a part-time workload such as 40-80% or Teilzeit. " +
         "graduate means a role for new graduates or Berufseinsteiger. " +
+        "part-time means Teilzeit or a workload that stays below 100%, such as 40-60%. " +
+        "full-time means Vollzeit, 100%, or 80-100%. " +
+        "Prefer a seniority tag when the title states it. " +
         "If the text does not say it, return an empty list. Do not invent.",
       user: `Company: ${company.name}\n\n${body}`,
     });
