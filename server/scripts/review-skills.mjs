@@ -1,7 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { resolve } from "path";
 import pg from "pg";
-import { completeJson } from "../src/ai/openai.client.ts";
+import { completeJson as openAiJson } from "../src/ai/openai.client.ts";
+import { completeJson as ollamaJson } from "../src/ai/ollama.client.ts";
 
 loadEnv(resolve(process.cwd(), ".env"));
 loadEnv(resolve(process.cwd(), "../.env"));
@@ -69,17 +70,13 @@ async function extractSkills(title, snippet) {
     },
     { role: "user", content: `Title: ${title}\n\nText: ${snippet}` },
   ];
-  const content = model.startsWith("gpt-")
-    ? await completeJson({ model, messages })
-    : JSON.parse(await ollama(messages) || "{}");
-  const parsed = content;
-  const skills = Array.isArray(parsed.skills) ? parsed.skills : [];
+  const content = await ask({ messages });
+  const skills = Array.isArray(content.skills) ? content.skills : [];
   return [...new Set(skills.map((item) => String(item).trim()).filter(Boolean))];
 }
 
 async function classifyUnknown(skill) {
-  const parsed = await completeJson({
-    model,
+  const parsed = await ask({
     system:
       "The name was not found in ESCO. Return JSON {\"decision\":\"new\"} if it is a real technology, product, programming tool, framework, or teachable professional skill. Return {\"decision\":\"drop\"} if it is a job title, city, company, generic word, sentence fragment, or junk. Do not invent a category.",
     user: skill,
@@ -87,23 +84,9 @@ async function classifyUnknown(skill) {
   return parsed.decision === "new" ? "new" : "drop";
 }
 
-async function ollama(messages) {
-  const response = await fetch("http://127.0.0.1:11434/api/chat", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      model,
-      stream: false,
-      format: "json",
-      options: { temperature: 0 },
-      messages,
-    }),
-  });
-  if (!response.ok) {
-    throw new Error(`Ollama ${response.status}`);
-  }
-  const body = await response.json();
-  return body.message?.content ?? "{}";
+function ask(input) {
+  const client = model.startsWith("gpt-") ? openAiJson : ollamaJson;
+  return client({ model, ...input });
 }
 
 function loadEnv(path) {
