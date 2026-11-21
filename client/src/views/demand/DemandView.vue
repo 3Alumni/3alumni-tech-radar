@@ -4,8 +4,9 @@ import Icon from '@/components/ui/Icon.vue'
 import SourceChip from '@/components/ui/SourceChip.vue'
 import CantonBars from '@/components/charts/CantonBars.vue'
 import CantonMap from '@/components/charts/CantonMap.vue'
-import { ICON, fmtNum } from '@/lib/format'
+import { ICON, fmtDate, fmtNum, fmtPct } from '@/lib/format'
 import { cantonMapName, useDemand } from '@/composables/useDemand'
+import { DEMAND_WEEK_AGO, weekAgoOpenings } from '@/data/demandWeekAgo.sample'
 import { useSalaryDialog } from '@/composables/useSalaryDialog'
 
 const ROLES = [
@@ -32,6 +33,12 @@ const kpi = computed(() => {
   if (!current.value) return 0
   if (region.value === 'all') return current.value.openings
   return shownCantons.value[0]?.count ?? 0
+})
+const priorOpenings = computed(() => (region.value === 'all' ? weekAgoOpenings(role.value, lang.value) : null))
+const weekDeltaPct = computed(() => {
+  const prior = priorOpenings.value
+  if (!current.value || prior == null || prior === 0) return null
+  return Math.round((current.value.openings / prior - 1) * 100)
 })
 
 function toggleRegion(canton: string) {
@@ -89,7 +96,15 @@ function openSalary() {
             {{ region === 'all' ? 'open ads in this search' : 'saved ads in ' + region }}
           </span>
         </div>
-        <p v-else class="muted"><b>No job ads yet</b> for this role and language.</p>
+        <p v-if="current && weekDeltaPct != null && priorOpenings != null" class="week">
+          <span :class="weekDeltaPct >= 0 ? 'up' : 'down'">
+            <Icon :path="weekDeltaPct >= 0 ? ICON.up : ICON.down" small />
+            {{ fmtPct(weekDeltaPct, true) }} vs {{ fmtDate(DEMAND_WEEK_AGO.asOf) }}
+          </span>
+          <span class="tag tag-sample">Sample</span>
+          <span class="muted small">{{ fmtNum(priorOpenings) }} a week ago. Invented, not an Adzuna count.</span>
+        </p>
+        <p v-if="!current" class="muted"><b>No job ads yet</b> for this role and language.</p>
         <button type="button" class="btn btn-ghost sal-link" :disabled="!salaryTrend" @click="openSalary">
           Average IT salary, last 12 months<Icon :path="ICON.arrow" small />
         </button>
@@ -118,4 +133,5 @@ function openSalary() {
 <style scoped>
 .filters { display: flex; align-items: flex-end; gap: var(--space-3); flex-wrap: wrap; }
 .sal-link { align-self: flex-start; margin-left: -12px; }
+.week { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin: 0; }
 </style>
