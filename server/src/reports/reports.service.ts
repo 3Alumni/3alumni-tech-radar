@@ -48,7 +48,7 @@ export class ReportsService {
       throw new BadRequestException("Question must be A, B, C, or E");
     }
     const records = await this.recordsFor(question as Question);
-    const focus = question === "E" ? "policy" : "market";
+    const focus = question === "E" ? "programme" : "market";
     return this.summaries.draft(records, title, focus);
   }
 

@@ -27,6 +27,21 @@ keyUpdates: a newly published number or act in the records that does not by itse
 Use [] when there are none. Do not invent items.
 Return JSON: {"text":"...","keyChanges":[],"keyUpdates":[]}`;
 
+const PROGRAMME = `Reply in English only. The records may be in German. Translate them. Do not leave German sentences in text, keyChanges, or keyUpdates.
+You write the Policy section of a letter for non-technical staff at Powercoders.
+Powercoders trains refugees and migrants for IT jobs in Switzerland.
+The records are recent Swiss acts. Summarise what they mean for the programme as a whole: asylum, integration, the right to work, temporary protection, and employer job-registration duties.
+Status F is only one example inside that context, not the subject of the letter. Do not organise the text around whether status F is mentioned.
+Do not open by saying that no record establishes a rule. Lead with the changes that are actually in the records.
+If a record is a draft or a consultation, say so.
+Use only the facts in the JSON. Do not invent numbers, dates, or laws.
+Write 2 to 4 short paragraphs. Do not list every act.
+Every paragraph that states a law must include the source name and the sourceUrl from that record.
+Also return two arrays of short strings. Do not start any item with "This".
+keyChanges: what in these records could force the programme to change. Include the sourceUrl. Use [] when there are none.
+keyUpdates: a newly published act that does not by itself force a programme change. Include the sourceUrl. Use [] when there are none.
+Return JSON: {"text":"...","keyChanges":[],"keyUpdates":[]}`;
+
 const MARKET = `Reply in English only.
 You write one short letter section for non-technical staff at Powercoders.
 Powercoders trains refugees and migrants for IT jobs in Switzerland.
@@ -70,7 +85,7 @@ export class SummariesService {
    * Phrases records that are already stored. The model may not compute new numbers.
    * The same topic and the same records are read back from Postgres.
    */
-  async draft(records: Metric[], topicTitle?: string, focus: "policy" | "market" = "policy"): Promise<Briefing> {
+  async draft(records: Metric[], topicTitle?: string, focus: "policy" | "market" | "programme" = "policy"): Promise<Briefing> {
     if (records.length === 0) {
       return { text: "No fresh records.", keyChanges: [], keyUpdates: [] };
     }
@@ -82,7 +97,7 @@ export class SummariesService {
       records: ordered.map(pack),
     };
     const stored = await this.remember(cacheKey(focus, payload), () =>
-      this.writeTopic(payload, focus === "market" ? MARKET : SYSTEM),
+      this.writeTopic(payload, focus === "market" ? MARKET : focus === "programme" ? PROGRAMME : SYSTEM),
     );
     return { text: stored.text, keyChanges: stored.keyChanges, keyUpdates: stored.keyUpdates };
   }

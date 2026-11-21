@@ -311,10 +311,11 @@ function isoWeek(iso: string) {
 .alert { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border: var(--border) solid; font-size: 14px; line-height: 20px; }
 .al-ok { background: var(--color-success-subtle); border-color: var(--color-success); }
 .al-ok .ico { color: var(--color-success); }
-.mail { border: var(--border) solid var(--color-border-strong); background: var(--color-surface); display: flex; flex-direction: column; }
-.mail-head { padding: 12px var(--space-3); border-bottom: var(--border) solid var(--color-border); background: var(--color-bg); font-size: 14px; line-height: 20px; }
-.mail-body { padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); }
-.mail-pt { display: flex; flex-direction: column; gap: var(--space-1); padding-bottom: var(--space-3); border-bottom: var(--border) solid var(--color-border); }
+.mail { border: var(--border) solid var(--color-border-strong); background: var(--color-surface); display: flex; flex-direction: column; min-width: 0; }
+.mail-head { padding: 12px var(--space-3); border-bottom: var(--border) solid var(--color-border); background: var(--color-bg); font-size: 14px; line-height: 20px; overflow-wrap: anywhere; }
+.mail-body { padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; overflow-wrap: anywhere; }
+.mail-body a { overflow-wrap: anywhere; word-break: break-all; }
+.mail-pt { display: flex; flex-direction: column; gap: var(--space-1); padding-bottom: var(--space-3); border-bottom: var(--border) solid var(--color-border); min-width: 0; }
 .mail-body ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 4px; }
 @media (max-width: 1023px) {
   .split { grid-template-columns: minmax(0, 1fr); }
