@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { area, curveMonotoneX, easeCubicOut, extent, line, scaleLinear, scalePoint, select } from 'd3'
+import { computed, ref } from 'vue'
+import { area, curveMonotoneX, extent, line, scaleLinear, scalePoint } from 'd3'
 import { fmtNum } from '@/lib/format'
-import { useElementWidth, useReducedMotion } from '@/composables/useMotion'
+import { useElementWidth } from '@/composables/useMotion'
 import { useActiveIndex } from '@/composables/useActiveIndex'
 
 /**
@@ -17,10 +17,7 @@ const HEIGHT = 160
 const TOP = 48 // room for the callout above the highest point
 const BOTTOM = HEIGHT - 8
 const box = ref<HTMLElement | null>(null)
-const lineEl = ref<SVGPathElement | null>(null)
-const areaEl = ref<SVGPathElement | null>(null)
 const width = useElementWidth(box)
-const reduced = useReducedMotion()
 const count = computed(() => props.points.length)
 const { active, onKey, onFocus, onBlur, hover } = useActiveIndex(count)
 const unitText = computed(() => props.unit ?? 'jobs')
@@ -68,64 +65,13 @@ function underCallout(v: { x: number; y: number }) {
   const overlapY = v.y - 10 > f.y - 56 && v.y - 28 < f.y - 14
   return overlapX && overlapY
 }
-
-let first = true
-// Markers only animate between data states, never from the empty first layout.
-const settled = ref(false)
-function draw() {
-  if (!lineEl.value || !areaEl.value || !width.value) return
-  const l = select(lineEl.value)
-  const a = select(areaEl.value)
-  l.interrupt()
-  a.interrupt()
-  const still = reduced.value || window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  if (first && !still) {
-    // First view: the line draws on left to right, the area fades in behind it.
-    l.attr('d', dLine.value)
-    a.attr('d', dArea.value).attr('opacity', 0)
-    const len = lineEl.value.getTotalLength()
-    l.attr('stroke-dasharray', `${len} ${len}`)
-      .attr('stroke-dashoffset', len)
-      // Named transition: the unnamed 'd' morph below must not cancel the draw-on.
-      .transition('draw').duration(900).ease(easeCubicOut)
-      .attr('stroke-dashoffset', 0)
-      .on('end interrupt', () => l.attr('stroke-dasharray', null).attr('stroke-dashoffset', null))
-    a.transition('draw').delay(300).duration(700).attr('opacity', 1)
-  } else if (first || still) {
-    l.interrupt('draw').attr('stroke-dasharray', null).attr('stroke-dashoffset', null).attr('d', dLine.value)
-    a.interrupt('draw').attr('opacity', 1).attr('d', dArea.value)
-  } else if (!settled.value) {
-    l.attr('d', dLine.value)
-    a.attr('d', dArea.value)
-  } else {
-    l.transition().duration(500).ease(easeCubicOut).attr('d', dLine.value)
-    a.transition().duration(500).ease(easeCubicOut).attr('d', dArea.value)
-  }
-  first = false
-  requestAnimationFrame(() => (settled.value = true))
-}
-onMounted(draw)
-watch([dLine, dArea], draw)
-// Resizing is not a data change: jump markers to the new layout instead of sliding them.
-watch(
-  width,
-  () => {
-    settled.value = false
-    requestAnimationFrame(() => requestAnimationFrame(() => (settled.value = true)))
-  },
-  { flush: 'sync' }, // must run before the redraw watcher above
-)
-onBeforeUnmount(() => {
-  if (lineEl.value) select(lineEl.value).interrupt().interrupt('draw')
-  if (areaEl.value) select(areaEl.value).interrupt().interrupt('draw')
-})
 </script>
 
 <template>
   <div class="trend-wrap">
     <div
       ref="box"
-      :class="['trend', { settled }]"
+      :class="['trend', 'settled']"
       role="img"
       tabindex="0"
       :aria-label="summary + '. Use arrow keys to read each ' + (step ?? 'month') + '.'"
@@ -136,21 +82,21 @@ onBeforeUnmount(() => {
     >
       <svg :viewBox="`0 0 ${Math.max(width, 1)} ${HEIGHT}`" :width="width" :height="HEIGHT" aria-hidden="true">
         <line v-for="g in grid" :key="g" class="grid" x1="0" :x2="width" :y1="g + 0.5" :y2="g + 0.5" />
-        <path ref="areaEl" class="area" />
+        <path class="area" :d="dArea" />
         <line
           v-if="focusPt && active !== null"
           class="cross"
           :x1="focusPt.x" :x2="focusPt.x" :y1="TOP - 8" :y2="BOTTOM"
         />
-        <path ref="lineEl" class="line" />
+        <path class="line" :d="dLine" />
         <g
           v-for="v in valueLabels"
           :key="v.key"
           class="vlabel"
-          :style="{ transform: `translate(${v.x}px, ${v.y}px)`, opacity: v.i === focusIdx || underCallout(v) ? 0 : 1 }"
+          :style="{ transform: `translate(${v.x}px, ${v.y}px)`, opacity: v.i === focusIdx ? 0 : 1 }"
         >
           <circle r="3.5" class="vdot" />
-          <text y="-12" text-anchor="middle">{{ v.text }}</text>
+          <text v-show="!underCallout(v)" y="-12" text-anchor="middle">{{ v.text }}</text>
         </g>
         <g v-if="lastPt" class="ring" :style="{ transform: `translate(${lastPt.x}px, ${lastPt.y}px)` }">
           <circle r="7" class="ring-halo" />
