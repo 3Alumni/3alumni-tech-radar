@@ -1,61 +1,28 @@
 <script setup lang="ts">
-import RadarLoader from '@/components/ui/RadarLoader.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
+import RadarLoader from '@/components/ui/RadarLoader.vue'
 import Icon from '@/components/ui/Icon.vue'
-import { ICON, fmtDate, fmtMonth, listJoin } from '@/lib/format'
+import { ICON, fmtMonth, listJoin } from '@/lib/format'
 import { parts } from '@/lib/links'
 import { API } from '@/lib/api'
-import { useInsights } from '@/composables/useInsights'
-import { usePolicyApi } from '@/composables/usePolicyApi'
-import { useSnapshot } from '@/composables/useSnapshot'
-import { useView } from '@/composables/useView'
 
 /** DEMO ONLY: nothing is stored or sent. An email address is personal data. */
-const { snapshot, sourceByName } = useSnapshot()
-const { items: policyItems } = usePolicyApi()
-const ins = useInsights()
-const { go } = useView()
 
-interface Topic { id: string; title: string }
-interface Briefing { text: string; keyChanges?: string[]; keyUpdates?: string[] }
+const SECTIONS = [
+  { key: 'demand', label: 'Demand', question: 'A' },
+  { key: 'skills', label: 'Skills', question: 'B' },
+  { key: 'employers', label: 'Employers', question: 'C' },
+  { key: 'policy', label: 'Policy', question: 'E' },
+] as const
 
-const topics = ref<Topic[]>([])
-const topicId = ref('')
-const briefing = ref<Briefing | null>(null)
-const topicLoading = ref(false)
-const topicError = ref('')
-const topicTitle = computed(() => topics.value.find((topic) => topic.id === topicId.value)?.title ?? '')
+type SectionKey = (typeof SECTIONS)[number]['key']
 
-onMounted(() => {
-  void loadTopics()
-})
-
-async function loadTopics() {
-  try {
-    const response = await fetch(`${API}/topics`)
-    if (!response.ok) throw new Error(`Topics API ${response.status}`)
-    topics.value = (await response.json()) as Topic[]
-  } catch (e) {
-    topicError.value = e instanceof Error ? e.message : String(e)
-  }
-}
-
-async function onTopic(event: Event) {
-  const id = (event.target as HTMLSelectElement).value
-  topicId.value = id
-  briefing.value = null
-  topicError.value = ''
-  if (!id) return
-  topicLoading.value = true
-  try {
-    const response = await fetch(`${API}/topics/${id}/preview`)
-    if (!response.ok) throw new Error(`Summary ${response.status}`)
-    briefing.value = (await response.json()) as Briefing
-  } catch (e) {
-    topicError.value = e instanceof Error ? e.message : String(e)
-  } finally {
-    topicLoading.value = false
-  }
+interface Briefing {
+  text: string
+  keyChanges: string[]
+  keyUpdates: string[]
+  loading: boolean
+  error: string
 }
 
 const form = reactive({
@@ -64,54 +31,63 @@ const form = reactive({
   employers: false,
   policy: false,
   freq: 'weekly' as 'weekly' | 'monthly',
-  alertNew: true,
   email: '',
 })
+const briefings = ref<Partial<Record<SectionKey, Briefing>>>({})
 const error = ref('')
 const submitted = ref(false)
 const emailEl = ref<HTMLInputElement | null>(null)
 
-const sectionNames = computed(() =>
-  [form.demand && 'Demand', form.skills && 'Skills', form.employers && 'Employers', form.policy && 'Policy'].filter(Boolean) as string[],
-)
-
-function srcDate(...names: string[]) {
-  const d = names.map((n) => sourceByName(n)?.lastUpdate).find(Boolean)
-  return d ? fmtDate(d) : ''
-}
-
-function isoWeek(iso: string) {
-  const d = new Date(iso + 'T00:00:00Z')
-  const day = d.getUTCDay() || 7
-  d.setUTCDate(d.getUTCDate() + 4 - day)
-  const y = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-  return Math.ceil(((d.getTime() - y.getTime()) / 86_400_000 + 1) / 7)
-}
+const chosen = computed(() => SECTIONS.filter((section) => form[section.key]))
 
 const subject = computed(() => {
-  const s = snapshot.value?.snapshotDate
-  const when = !s ? '' : form.freq === 'weekly' ? `Week ${isoWeek(s)}` : fmtMonth(s.slice(0, 7), true)
-  return ['Market Radar', when, sectionNames.value.length ? listJoin(sectionNames.value) : ''].filter(Boolean).join(' · ')
+  const today = new Date().toISOString().slice(0, 10)
+  const when = form.freq === 'weekly' ? `Week ${isoWeek(today)}` : fmtMonth(today.slice(0, 7), true)
+  const names = chosen.value.map((section) => section.label)
+  return ['Market Radar', when, names.length ? listJoin(names) : ''].filter(Boolean).join(' · ')
 })
 
-const points = computed(() => {
-  const out: { h: string; t: string; src: string; d: string }[] = []
-  const top = ins.cantonsSorted.value[0]
-  const firstSkill = ins.skills.value[0]
-  const firstPolicy = ins.policySorted.value[0]
-  if (form.demand)
-    out.push({ h: 'Demand', t: `${ins.roleLabel.value} jobs ${ins.changeText.value}.${top ? ' Most jobs are in ' + top.canton + '.' : ''}`, src: 'Adzuna', d: srcDate('Adzuna') })
-  if (form.skills && firstSkill)
-    out.push({ h: 'Skills', t: `${firstSkill.name} is the most requested skill. ${ins.risingSkill.value} climbed the most.`, src: 'ESCO + Adzuna', d: srcDate('ESCO', 'Adzuna') })
-  if (form.employers)
-    out.push({ h: 'Employers', t: ins.employersAnswer.value, src: 'Adzuna + Zefix', d: srcDate('Adzuna', 'Zefix') })
-  const livePolicy = policyItems.value[0]
-  if (form.policy && livePolicy)
-    out.push({ h: 'Policy and people', t: livePolicy.title, src: livePolicy.sourceName, d: fmtDate(livePolicy.publishedDate) })
-  else if (form.policy && firstPolicy)
-    out.push({ h: 'Policy and people', t: firstPolicy.title, src: firstPolicy.sourceName, d: fmtDate(firstPolicy.downloadedDate) })
-  return out
+onMounted(() => {
+  void sync()
 })
+
+async function sync() {
+  await Promise.all(chosen.value.map((section) => load(section.key)))
+}
+
+async function load(key: SectionKey) {
+  const current = briefings.value[key]
+  if (current?.text || current?.loading) return
+  const section = SECTIONS.find((item) => item.key === key)
+  if (!section) return
+  briefings.value = { ...briefings.value, [key]: { text: '', keyChanges: [], keyUpdates: [], loading: true, error: '' } }
+  try {
+    const response = await fetch(`${API}/questions/${section.question}/preview`)
+    if (!response.ok) throw new Error(`Summary ${response.status}`)
+    const body = (await response.json()) as { text?: string; keyChanges?: string[]; keyUpdates?: string[] }
+    briefings.value = {
+      ...briefings.value,
+      [key]: {
+        text: body.text ?? '',
+        keyChanges: body.keyChanges ?? [],
+        keyUpdates: body.keyUpdates ?? [],
+        loading: false,
+        error: '',
+      },
+    }
+  } catch (e) {
+    briefings.value = {
+      ...briefings.value,
+      [key]: {
+        text: '',
+        keyChanges: [],
+        keyUpdates: [],
+        loading: false,
+        error: e instanceof Error ? e.message : String(e),
+      },
+    }
+  }
+}
 
 function touch() {
   submitted.value = false
@@ -119,7 +95,7 @@ function touch() {
 }
 
 function submit() {
-  if (!sectionNames.value.length) {
+  if (!chosen.value.length) {
     error.value = 'Pick at least one section.'
     submitted.value = false
     return
@@ -134,12 +110,32 @@ function submit() {
   submitted.value = true
   form.email = '' // store nothing
 }
+
+function letterPoints(text: string) {
+  return text
+    .split(/\n\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map((paragraph) => {
+      const match = paragraph.match(/\s*Source:\s*([\s\S]+)$/i)
+      if (!match || match.index == null) return { body: paragraph, source: '' }
+      return { body: paragraph.slice(0, match.index).trim(), source: match[1].trim() }
+    })
+}
+
+function isoWeek(iso: string) {
+  const d = new Date(iso + 'T00:00:00Z')
+  const day = d.getUTCDay() || 7
+  d.setUTCDate(d.getUTCDate() + 4 - day)
+  const y = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
+  return Math.ceil(((d.getTime() - y.getTime()) / 86_400_000 + 1) / 7)
+}
 </script>
 
 <template>
   <section class="view" aria-labelledby="mail-h">
     <div class="split">
-      <form class="panel" novalidate @submit.prevent="submit" @change="touch">
+      <form class="panel" novalidate @submit.prevent="submit" @change="touch(); sync()">
         <div class="card-head">
           <h1 id="mail-h" class="h2">Get a summary by email</h1>
           <p class="muted">Plain language, with a source link under each point.</p>
@@ -156,7 +152,6 @@ function submit() {
           <label class="check"><input v-model="form.freq" type="radio" name="freq" value="weekly" />Weekly</label>
           <label class="check"><input v-model="form.freq" type="radio" name="freq" value="monthly" />Monthly</label>
         </fieldset>
-        <label class="check"><input v-model="form.alertNew" type="checkbox" />Also alert me when new policy items arrive</label>
         <div class="field">
           <label class="label" for="mail">Email address</label>
           <input
@@ -185,61 +180,54 @@ function submit() {
       </form>
 
       <div class="panel">
-        <div class="field">
-          <label class="label" for="topic">Topic</label>
-          <div class="sel">
-            <select id="topic" class="input" :value="topicId" @change="onTopic">
-              <option value="">Letter from the sections on the left</option>
-              <option v-for="topic in topics" :key="topic.id" :value="topic.id">{{ topic.title }}</option>
-            </select>
-            <Icon :path="ICON.chevronDown" />
-          </div>
-        </div>
         <p class="label muted">Preview</p>
         <div class="mail">
-          <div class="mail-head"><b>{{ topicId ? topicTitle : subject }}</b></div>
-          <div v-if="topicId" class="mail-body">
-            <RadarLoader v-if="topicLoading" text="Writing the summary…" compact />
-            <p v-else-if="topicError" class="small" role="alert">{{ topicError }}</p>
-            <template v-else-if="briefing">
-              <p>
-                <template v-for="(chunk, i) in parts(briefing.text)" :key="i">
-                  <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
-                  <template v-else>{{ chunk.text }}</template>
+          <div class="mail-head"><b>{{ subject }}</b></div>
+          <div class="mail-body">
+            <p v-if="!chosen.length" class="muted">Pick at least one section to see a preview.</p>
+            <div v-for="section in chosen" :key="section.key" class="mail-pt">
+              <p class="label">{{ section.label }}</p>
+              <RadarLoader v-if="briefings[section.key]?.loading" text="Writing the summary…" compact />
+              <p v-else-if="briefings[section.key]?.error" class="small" role="alert">{{ briefings[section.key]?.error }}</p>
+              <template v-else-if="briefings[section.key]?.text">
+                <template v-for="(point, n) in letterPoints(briefings[section.key]!.text)" :key="n">
+                  <p>
+                    <template v-for="(chunk, i) in parts(point.body)" :key="i">
+                      <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
+                      <template v-else>{{ chunk.text }}</template>
+                    </template>
+                  </p>
+                  <p v-if="point.source" class="small muted">
+                    Source:
+                    <template v-for="(chunk, i) in parts(point.source)" :key="i">
+                      <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
+                      <template v-else>{{ chunk.text }}</template>
+                    </template>
+                  </p>
                 </template>
-              </p>
-              <div v-if="briefing.keyChanges?.length" class="mail-pt">
-                <p class="label">Key changes</p>
-                <ul>
-                  <li v-for="point in briefing.keyChanges" :key="point">
-                    <template v-for="(chunk, i) in parts(point)" :key="i">
-                      <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
-                      <template v-else>{{ chunk.text }}</template>
-                    </template>
-                  </li>
-                </ul>
-              </div>
-              <div v-if="briefing.keyUpdates?.length" class="mail-pt">
-                <p class="label">Key updates</p>
-                <ul>
-                  <li v-for="point in briefing.keyUpdates" :key="point">
-                    <template v-for="(chunk, i) in parts(point)" :key="i">
-                      <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
-                      <template v-else>{{ chunk.text }}</template>
-                    </template>
-                  </li>
-                </ul>
-              </div>
-            </template>
-          </div>
-          <div v-else class="mail-body">
-            <p v-if="!points.length" class="muted">Pick at least one section to see a preview.</p>
-            <div v-for="m in points" :key="m.h" class="mail-pt">
-              <p class="label">{{ m.h }}</p>
-              <p>{{ m.t }}</p>
-              <p class="small muted">
-                Source: <a href="#sources" @click.prevent="go('sources')">{{ m.src }}</a><template v-if="m.d"> · {{ m.d }}</template>
-              </p>
+                <div v-if="briefings[section.key]!.keyChanges.length">
+                  <p class="label">Key changes</p>
+                  <ul>
+                    <li v-for="point in briefings[section.key]!.keyChanges" :key="point">
+                      <template v-for="(chunk, i) in parts(point)" :key="i">
+                        <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
+                        <template v-else>{{ chunk.text }}</template>
+                      </template>
+                    </li>
+                  </ul>
+                </div>
+                <div v-if="briefings[section.key]!.keyUpdates.length">
+                  <p class="label">Key updates</p>
+                  <ul>
+                    <li v-for="point in briefings[section.key]!.keyUpdates" :key="point">
+                      <template v-for="(chunk, i) in parts(point)" :key="i">
+                        <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
+                        <template v-else>{{ chunk.text }}</template>
+                      </template>
+                    </li>
+                  </ul>
+                </div>
+              </template>
             </div>
             <p class="small muted">Unsubscribe link goes here</p>
           </div>

@@ -1,6 +1,16 @@
 import { Controller, Get, Param } from "@nestjs/common";
 import { ReportsService } from "./reports.service";
 
+@Controller("questions")
+export class QuestionsController {
+  constructor(private readonly reports: ReportsService) {}
+
+  @Get(":question/preview")
+  preview(@Param("question") question: string) {
+    return this.reports.previewQuestion(question);
+  }
+}
+
 @Controller("topics")
 export class TopicsController {
   constructor(private readonly reports: ReportsService) {}
