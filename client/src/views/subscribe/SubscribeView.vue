@@ -1,15 +1,61 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import { ICON, fmtDate, fmtMonth, listJoin } from '@/lib/format'
+import { parts } from '@/lib/links'
+import { API } from '@/lib/api'
 import { useInsights } from '@/composables/useInsights'
+import { usePolicyApi } from '@/composables/usePolicyApi'
 import { useSnapshot } from '@/composables/useSnapshot'
 import { useView } from '@/composables/useView'
 
 /** DEMO ONLY: nothing is stored or sent. An email address is personal data. */
-const { snapshot, newPolicyCount, sourceByName } = useSnapshot()
+const { snapshot, sourceByName } = useSnapshot()
+const { items: policyItems } = usePolicyApi()
 const ins = useInsights()
 const { go } = useView()
+
+interface Topic { id: string; title: string }
+interface Briefing { text: string; keyChanges?: string[]; keyUpdates?: string[] }
+
+const topics = ref<Topic[]>([])
+const topicId = ref('')
+const briefing = ref<Briefing | null>(null)
+const topicLoading = ref(false)
+const topicError = ref('')
+const topicTitle = computed(() => topics.value.find((topic) => topic.id === topicId.value)?.title ?? '')
+
+onMounted(() => {
+  void loadTopics()
+})
+
+async function loadTopics() {
+  try {
+    const response = await fetch(`${API}/topics`)
+    if (!response.ok) throw new Error(`Topics API ${response.status}`)
+    topics.value = (await response.json()) as Topic[]
+  } catch (e) {
+    topicError.value = e instanceof Error ? e.message : String(e)
+  }
+}
+
+async function onTopic(event: Event) {
+  const id = (event.target as HTMLSelectElement).value
+  topicId.value = id
+  briefing.value = null
+  topicError.value = ''
+  if (!id) return
+  topicLoading.value = true
+  try {
+    const response = await fetch(`${API}/topics/${id}/preview`)
+    if (!response.ok) throw new Error(`Summary ${response.status}`)
+    briefing.value = (await response.json()) as Briefing
+  } catch (e) {
+    topicError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    topicLoading.value = false
+  }
+}
 
 const form = reactive({
   demand: true,
@@ -58,8 +104,11 @@ const points = computed(() => {
     out.push({ h: 'Skills', t: `${firstSkill.name} is the most requested skill. ${ins.risingSkill.value} climbed the most.`, src: 'ESCO + Adzuna', d: srcDate('ESCO', 'Adzuna') })
   if (form.employers)
     out.push({ h: 'Employers', t: ins.employersAnswer.value, src: 'Adzuna + Zefix', d: srcDate('Adzuna', 'Zefix') })
-  if (form.policy && firstPolicy)
-    out.push({ h: 'Policy and people', t: `${newPolicyCount.value} new items. Most important: ${firstPolicy.title}.`, src: firstPolicy.sourceName, d: fmtDate(firstPolicy.downloadedDate) })
+  const livePolicy = policyItems.value[0]
+  if (form.policy && livePolicy)
+    out.push({ h: 'Policy and people', t: livePolicy.title, src: livePolicy.sourceName, d: fmtDate(livePolicy.publishedDate) })
+  else if (form.policy && firstPolicy)
+    out.push({ h: 'Policy and people', t: firstPolicy.title, src: firstPolicy.sourceName, d: fmtDate(firstPolicy.downloadedDate) })
   return out
 })
 
@@ -99,7 +148,7 @@ function submit() {
           <label class="check"><input v-model="form.demand" type="checkbox" />Demand</label>
           <label class="check"><input v-model="form.skills" type="checkbox" />Skills</label>
           <label class="check"><input v-model="form.employers" type="checkbox" />Employers</label>
-          <label class="check"><input v-model="form.policy" type="checkbox" />Policy and people</label>
+          <label class="check"><input v-model="form.policy" type="checkbox" />Policy</label>
         </fieldset>
         <fieldset class="checks">
           <legend>How often</legend>
@@ -135,10 +184,54 @@ function submit() {
       </form>
 
       <div class="panel">
+        <div class="field">
+          <label class="label" for="topic">Topic</label>
+          <div class="sel">
+            <select id="topic" class="input" :value="topicId" @change="onTopic">
+              <option value="">Letter from the sections on the left</option>
+              <option v-for="topic in topics" :key="topic.id" :value="topic.id">{{ topic.title }}</option>
+            </select>
+            <Icon :path="ICON.chevronDown" />
+          </div>
+        </div>
         <p class="label muted">Preview</p>
         <div class="mail">
-          <div class="mail-head"><b>{{ subject }}</b></div>
-          <div class="mail-body">
+          <div class="mail-head"><b>{{ topicId ? topicTitle : subject }}</b></div>
+          <div v-if="topicId" class="mail-body">
+            <p v-if="topicLoading" class="muted">Writing the summary…</p>
+            <p v-else-if="topicError" class="small" role="alert">{{ topicError }}</p>
+            <template v-else-if="briefing">
+              <p>
+                <template v-for="(chunk, i) in parts(briefing.text)" :key="i">
+                  <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
+                  <template v-else>{{ chunk.text }}</template>
+                </template>
+              </p>
+              <div v-if="briefing.keyChanges?.length" class="mail-pt">
+                <p class="label">Key changes</p>
+                <ul>
+                  <li v-for="point in briefing.keyChanges" :key="point">
+                    <template v-for="(chunk, i) in parts(point)" :key="i">
+                      <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
+                      <template v-else>{{ chunk.text }}</template>
+                    </template>
+                  </li>
+                </ul>
+              </div>
+              <div v-if="briefing.keyUpdates?.length" class="mail-pt">
+                <p class="label">Key updates</p>
+                <ul>
+                  <li v-for="point in briefing.keyUpdates" :key="point">
+                    <template v-for="(chunk, i) in parts(point)" :key="i">
+                      <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
+                      <template v-else>{{ chunk.text }}</template>
+                    </template>
+                  </li>
+                </ul>
+              </div>
+            </template>
+          </div>
+          <div v-else class="mail-body">
             <p v-if="!points.length" class="muted">Pick at least one section to see a preview.</p>
             <div v-for="m in points" :key="m.h" class="mail-pt">
               <p class="label">{{ m.h }}</p>
@@ -169,6 +262,7 @@ function submit() {
 .mail-head { padding: 12px var(--space-3); border-bottom: var(--border) solid var(--color-border); background: var(--color-bg); font-size: 14px; line-height: 20px; }
 .mail-body { padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); }
 .mail-pt { display: flex; flex-direction: column; gap: var(--space-1); padding-bottom: var(--space-3); border-bottom: var(--border) solid var(--color-border); }
+.mail-body ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 4px; }
 @media (max-width: 1023px) {
   .split { grid-template-columns: minmax(0, 1fr); }
 }

@@ -1,5 +1,5 @@
 import { computed, ref } from 'vue'
-import { useSnapshot } from './useSnapshot'
+import { usePolicyApi } from './usePolicyApi'
 
 /**
  * Which new policy items this viewer has opened. Per-browser convenience only (localStorage):
@@ -16,12 +16,13 @@ try {
 }
 
 export function usePolicyRead() {
-  const { snapshot } = useSnapshot()
+  const { items, ensure } = usePolicyApi()
+  void ensure()
 
   const isUnread = (p: { id: string; isNew: boolean }) => p.isNew && !read.value.has(p.id)
   /** New items this viewer has not opened yet, newest first. */
   const unreadItems = computed(() =>
-    (snapshot.value?.policy ?? []).filter(isUnread).sort((x, y) => y.publishedDate.localeCompare(x.publishedDate)),
+    items.value.filter(isUnread).sort((x, y) => y.publishedDate.localeCompare(x.publishedDate)),
   )
   const unreadCount = computed(() => unreadItems.value.length)
 

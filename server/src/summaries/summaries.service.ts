@@ -1,5 +1,7 @@
+import { createHash } from "crypto";
 import { Injectable } from "@nestjs/common";
 import { completeJson } from "../ai/openai.client";
+import { DbService } from "../core/db.service";
 import { Metric } from "../core/metric";
 
 const SOURCE_TITLES: Record<string, string> = {
@@ -33,14 +35,26 @@ export interface Briefing {
 
 interface DraftResponse {
   text?: string;
+  titleEn?: string;
   keyChanges?: unknown;
   keyUpdates?: unknown;
 }
 
+export interface ActBriefing extends Briefing {
+  /** English reading title. The stored German title stays on the metric. */
+  titleEn: string;
+}
+
 @Injectable()
 export class SummariesService {
+  /** One OpenAI call per cache key, even if the page asks for the same act twice at once. */
+  private readonly inflight = new Map<string, Promise<Briefing & { titleEn?: string }>>();
+
+  constructor(private readonly db: DbService) {}
+
   /**
    * Phrases records that are already stored. The model may not compute new numbers.
+   * The same topic and the same records are read back from Postgres.
    */
   async draft(records: Metric[], topicTitle?: string): Promise<Briefing> {
     if (records.length === 0) {
@@ -53,6 +67,31 @@ export class SummariesService {
       topic: topicTitle ?? null,
       records: ordered.map(pack),
     };
+    const stored = await this.remember(cacheKey("topic", payload), () => this.writeTopic(payload));
+    return { text: stored.text, keyChanges: stored.keyChanges, keyUpdates: stored.keyUpdates };
+  }
+
+  /** A readable account of one act. Only the supplied text may be used. */
+  async draftAct(act: { title: string; text: string; sourceUrl?: string; reference?: string }): Promise<ActBriefing> {
+    const text = act.text.slice(0, 12000);
+    const stored = await this.remember(
+      cacheKey("act", {
+        title: act.title,
+        reference: act.reference ?? null,
+        sourceUrl: act.sourceUrl ?? null,
+        text,
+      }),
+      () => this.writeAct({ ...act, text }),
+    );
+    return {
+      text: stored.text,
+      keyChanges: stored.keyChanges,
+      keyUpdates: stored.keyUpdates,
+      titleEn: stored.titleEn || act.title,
+    };
+  }
+
+  private async writeTopic(payload: { topic: string | null; records: ReturnType<typeof pack>[] }) {
     const result = await completeJson<DraftResponse>({
       system: SYSTEM,
       user: JSON.stringify(payload),
@@ -60,8 +99,7 @@ export class SummariesService {
     return briefing(result, "OpenAI summary was empty");
   }
 
-  /** A readable account of one act. Only the supplied text may be used. */
-  async draftAct(act: { title: string; text: string; sourceUrl?: string; reference?: string }): Promise<Briefing> {
+  private async writeAct(act: { title: string; text: string; sourceUrl?: string; reference?: string }): Promise<ActBriefing> {
     const result = await completeJson<DraftResponse>({
       system: `Reply in English only. The act is in German. Translate it. Do not leave German sentences in the paragraph, keyChanges, or keyUpdates. Official short names such as Asylverordnung 1 or AIG may stay, with the English meaning beside them.
 You explain one Swiss legal act to a non-technical Powercoders colleague.
@@ -72,10 +110,11 @@ Start with the act's own short name from the title, then the verb. Example shape
 Never start with "This", "The act", "The law", or "It".
 Mention status F, asylum, temporary protection, integration, or work only when the text does.
 End with the sourceUrl.
+Also return titleEn: a short English title a colleague can read. Keep the official short name and put the English meaning in parentheses. Example: "Asylverordnung 1 (Asylum Ordinance 1)". Do not copy the full German title.
 Also return keyChanges and keyUpdates for this act only.
 keyChanges: what in this text could force the programme to change. keyUpdates: what the act newly publishes that does not force a change.
 Short strings, never starting with "This". Include the sourceUrl. Use [] when there are none.
-Return JSON: {"text":"...","keyChanges":[],"keyUpdates":[]}`,
+Return JSON: {"titleEn":"...","text":"...","keyChanges":[],"keyUpdates":[]}`,
       user: JSON.stringify({
         title: act.title,
         reference: act.reference ?? null,
@@ -83,8 +122,73 @@ Return JSON: {"text":"...","keyChanges":[],"keyUpdates":[]}`,
         text: act.text.slice(0, 12000),
       }),
     });
-    return briefing(result, "OpenAI act summary was empty");
+    return {
+      ...briefing(result, "OpenAI act summary was empty"),
+      titleEn: result.titleEn?.trim() || act.title,
+    };
   }
+
+  private async remember(
+    key: string,
+    produce: () => Promise<Briefing & { titleEn?: string }>,
+  ): Promise<Briefing & { titleEn?: string }> {
+    const stored = await this.read(key);
+    if (stored) return stored;
+    const running = this.inflight.get(key);
+    if (running) return running;
+    const job = produce().then(async (fresh) => {
+      await this.save(key, fresh);
+      return fresh;
+    });
+    this.inflight.set(key, job);
+    try {
+      return await job;
+    } finally {
+      this.inflight.delete(key);
+    }
+  }
+
+  private async read(key: string): Promise<(Briefing & { titleEn?: string }) | null> {
+    const result = await this.db.pool.query<{
+      title_en: string | null;
+      body: string;
+      key_changes: string[];
+      key_updates: string[];
+    }>(
+      `SELECT title_en, body, key_changes, key_updates
+       FROM summaries
+       WHERE cache_key = $1`,
+      [key],
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    return {
+      text: row.body,
+      keyChanges: row.key_changes ?? [],
+      keyUpdates: row.key_updates ?? [],
+      titleEn: row.title_en ?? undefined,
+    };
+  }
+
+  private async save(key: string, summary: Briefing & { titleEn?: string }) {
+    await this.db.pool.query(
+      `INSERT INTO summaries (cache_key, title_en, body, key_changes, key_updates)
+       VALUES ($1, $2, $3, $4::jsonb, $5::jsonb)
+       ON CONFLICT (cache_key) DO NOTHING`,
+      [
+        key,
+        summary.titleEn ?? null,
+        summary.text,
+        JSON.stringify(summary.keyChanges),
+        JSON.stringify(summary.keyUpdates),
+      ],
+    );
+  }
+}
+
+function cacheKey(kind: string, payload: unknown): string {
+  const hash = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+  return `${kind}:${hash}`;
 }
 
 function briefing(result: DraftResponse, emptyError: string): Briefing {

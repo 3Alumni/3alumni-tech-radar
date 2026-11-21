@@ -3,6 +3,7 @@ import { PoolClient } from "pg";
 import { SourceFileBlob } from "./connector";
 import { DbService } from "./db.service";
 import { Metric, Question } from "./metric";
+import { readableLabel } from "../people/group-label";
 
 interface MetricDbRow {
   label: string;
@@ -161,7 +162,7 @@ async function insertMetric(client: PoolClient, snapshotId: string, metric: Metr
 
 function toMetric(row: MetricDbRow): Metric {
   const metric: Metric = {
-    label: row.label,
+    label: readableLabel(row.label),
     value: integerOrText(row.value),
     question: row.question,
     sourceId: row.source_id,

@@ -8,8 +8,12 @@ import OverviewView from '@/views/overview/OverviewView.vue'
 import { focusContent, useView, type ViewId } from '@/composables/useView'
 import { useSidebar } from '@/composables/useSidebar'
 import { useSnapshot } from '@/composables/useSnapshot'
+import { usePeopleApi } from '@/composables/usePeopleApi'
+import { usePolicyApi } from '@/composables/usePolicyApi'
 
 useSnapshot() // start loading the data as early as possible
+void usePeopleApi().ensure()
+void usePolicyApi().ensure()
 const { current } = useView()
 const { drawerOpen } = useSidebar()
 const topbar = ref<InstanceType<typeof TopBar> | null>(null)
@@ -19,6 +23,7 @@ const IMPORTS: Partial<Record<ViewId, () => Promise<unknown>>> = {
   demand: () => import('@/views/demand/DemandView.vue'),
   skills: () => import('@/views/skills/SkillsView.vue'),
   employers: () => import('@/views/employers/EmployersView.vue'),
+  people: () => import('@/views/context/PeopleView.vue'),
   policy: () => import('@/views/context/PolicyView.vue'),
   sources: () => import('@/views/sources/SourcesView.vue'),
   subscribe: () => import('@/views/subscribe/SubscribeView.vue'),
@@ -31,7 +36,7 @@ const view = computed(() => VIEWS[current.value])
 
 const LOADER_LABEL: Record<ViewId, string> = {
   overview: 'overview', demand: 'demand', skills: 'skills', employers: 'employers',
-  policy: 'new policies', sources: 'sources', subscribe: 'email summary',
+  people: 'people', policy: 'new policies', sources: 'sources', subscribe: 'email summary',
 }
 const LOADER_MS = 700
 const LOADER_MS_REDUCED = 300

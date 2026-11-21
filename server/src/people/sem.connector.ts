@@ -5,6 +5,7 @@ import { ConfigService } from "../core/config.service";
 import { SourceFileConfig } from "../core/config.types";
 import { ConnectorRegistry } from "../core/connector-registry.service";
 import { Metric } from "../core/metric";
+import { readableGroup } from "./group-label";
 import { SourceConnector } from "../core/source-connector";
 
 type Row = unknown[];
@@ -211,7 +212,7 @@ export class SemConnector extends SourceConnector {
     assertTotal(file.id, total, groups, cantons, origins);
     const metrics = [this.metric(file, fetchedAt, "Foreign residents", total, "CH")];
     for (const [group, value] of groups) {
-      metrics.push(this.metric(file, fetchedAt, `Foreign residents, ${group}`, value, "CH"));
+      metrics.push(this.metric(file, fetchedAt, `Foreign residents, ${readableGroup(group)}`, value, "CH"));
     }
     for (const [origin, value] of origins) {
       metrics.push(this.metric(file, fetchedAt, originLabel(origin), value, "CH"));
@@ -234,7 +235,7 @@ export class SemConnector extends SourceConnector {
     return [
       this.metric(file, fetchedAt, "Recognized refugees", total, "CH"),
       ...[...groups].map(([group, value]) =>
-        this.metric(file, fetchedAt, `Recognized refugees, ${group}`, value, "CH"),
+        this.metric(file, fetchedAt, `Recognized refugees, ${readableGroup(group)}`, value, "CH"),
       ),
     ];
   }
@@ -251,7 +252,7 @@ export class SemConnector extends SourceConnector {
     return [
       this.metric(file, fetchedAt, "Non-permanent residents in work", total, "CH"),
       ...[...groups].map(([group, value]) =>
-        this.metric(file, fetchedAt, `Non-permanent residents in work, ${group}`, value, "CH"),
+        this.metric(file, fetchedAt, `Non-permanent residents in work, ${readableGroup(group)}`, value, "CH"),
       ),
     ];
   }
@@ -268,7 +269,7 @@ export class SemConnector extends SourceConnector {
     return [
       this.metric(file, fetchedAt, "Immigration with work", total, "CH"),
       ...[...groups].map(([group, value]) =>
-        this.metric(file, fetchedAt, `Immigration with work, ${group}`, value, "CH"),
+        this.metric(file, fetchedAt, `Immigration with work, ${readableGroup(group)}`, value, "CH"),
       ),
     ];
   }

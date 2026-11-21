@@ -1,11 +1,67 @@
 <script setup lang="ts">
+import { onMounted, ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import DataAlerts from '@/components/ui/DataAlerts.vue'
 import CardState from '@/components/ui/CardState.vue'
 import { ICON, fmtDate, isExternalUrl } from '@/lib/format'
-import { useSnapshot } from '@/composables/useSnapshot'
+import { API } from '@/lib/api'
 
-const { snapshot } = useSnapshot()
+interface ApiSource {
+  id: string
+  title: string
+  questions: string[]
+  url: string
+  enabled: boolean
+  metricCount: number
+  fetchedAt: string | null
+}
+
+const PURPOSE: Record<string, string> = {
+  sem: 'Residence status, asylum and foreign-resident figures',
+  fedlex: 'Laws and ordinances on asylum, status F and integration',
+  adzuna: 'Job ads for IT roles',
+  bfs: 'Labour-market statistics',
+  esco: 'Skill names',
+}
+
+const USED: Record<string, string> = {
+  A: 'Demand',
+  B: 'Skills',
+  C: 'Employers',
+  D: 'People',
+  E: 'Policy',
+}
+
+const sources = ref<ApiSource[]>([])
+const loading = ref(false)
+const error = ref('')
+
+onMounted(() => {
+  void load()
+})
+
+async function load() {
+  loading.value = true
+  error.value = ''
+  try {
+    const response = await fetch(`${API}/sources`)
+    if (!response.ok) throw new Error(`Sources API ${response.status}`)
+    const rows = (await response.json()) as ApiSource[]
+    sources.value = rows.filter((source) => source.enabled)
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    loading.value = false
+  }
+}
+
+function usedIn(questions: string[]) {
+  return questions.map((question) => USED[question] ?? question).join(', ')
+}
+
+function updated(source: ApiSource) {
+  return source.fetchedAt ? fmtDate(source.fetchedAt.slice(0, 10)) : 'Not loaded yet'
+}
 </script>
 
 <template>
@@ -16,9 +72,11 @@ const { snapshot } = useSnapshot()
     </div>
     <DataAlerts />
 
-    <CardState :empty="!snapshot?.sources.length">
+    <p v-if="error" class="small" role="alert">{{ error }}</p>
+    <CardState :empty="!loading && !sources.length">
       <template #empty><b>No sources listed yet.</b></template>
-      <table class="tbl cardify">
+      <p v-if="loading" class="small muted">Loading sources…</p>
+      <table v-else class="tbl cardify">
         <caption class="sr">Data sources used in Market Radar</caption>
         <thead>
           <tr>
@@ -29,16 +87,19 @@ const { snapshot } = useSnapshot()
           </tr>
         </thead>
         <tbody>
-          <tr v-for="s in snapshot?.sources ?? []" :key="s.name">
+          <tr v-for="s in sources" :key="s.id">
             <td data-label="Source">
               <a v-if="isExternalUrl(s.url)" class="ext" :href="s.url" target="_blank" rel="noopener noreferrer">
-                <b>{{ s.name }}</b><span class="sr"> (opens in a new tab)</span><Icon :path="ICON.external" small />
+                <b>{{ s.title }}</b><span class="sr"> (opens in a new tab)</span><Icon :path="ICON.external" small />
               </a>
-              <b v-else>{{ s.name }}</b>
+              <b v-else>{{ s.title }}</b>
             </td>
-            <td data-label="What for">{{ s.purpose }}</td>
-            <td data-label="Used in">{{ s.usedIn.join(', ') }}</td>
-            <td data-label="Updated" class="num">{{ fmtDate(s.lastUpdate) }}</td>
+            <td data-label="What for">{{ PURPOSE[s.id] ?? s.id }}</td>
+            <td data-label="Used in">{{ usedIn(s.questions) }}</td>
+            <td data-label="Updated" class="num">
+              {{ updated(s) }}
+              <span v-if="s.metricCount" class="small muted"><br />{{ s.metricCount }} figures</span>
+            </td>
           </tr>
         </tbody>
       </table>

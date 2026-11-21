@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import { ICON, fmtDate, fmtNum, fmtPct } from '@/lib/format'
 import { cantonMapName, useDemand } from '@/composables/useDemand'
 import { useSkills } from '@/composables/useSkills'
 import { useEmployers } from '@/composables/useEmployers'
+import { usePolicyApi } from '@/composables/usePolicyApi'
 import { DEMAND_WEEK_AGO, weekAgoOpenings } from '@/data/demandWeekAgo.sample'
 import { useView } from '@/composables/useView'
 import { useSalaryDialog } from '@/composables/useSalaryDialog'
@@ -21,6 +22,7 @@ const lang = ref<'en' | 'de'>('en')
 const { status, errorMessage, queries, salaryTrend } = useDemand()
 const skills = useSkills()
 const employers = useEmployers()
+const { items: policyItems, loading: policyLoading } = usePolicyApi()
 const { go } = useView()
 const salary = useSalaryDialog()
 
@@ -61,21 +63,7 @@ const employerTop = computed(() => {
     .slice(0, 4)
 })
 
-const policy = ref<{ label: string; date: string }[]>([])
-onMounted(async () => {
-  try {
-    const res = await fetch('/api/policy')
-    if (!res.ok) return
-    const rows = (await res.json()) as { label?: string; fetchedAt?: string; fetched_at?: string }[]
-    if (!Array.isArray(rows)) return
-    policy.value = rows.slice(0, 3).flatMap((row) => {
-      const date = row.fetchedAt ?? row.fetched_at
-      return row.label && date ? [{ label: row.label, date: date.slice(0, 10) }] : []
-    })
-  } catch {
-    policy.value = []
-  }
-})
+const policyTop = computed(() => policyItems.value.slice(0, 3))
 
 function openSalary() {
   const trend = salaryTrend.value
@@ -174,11 +162,12 @@ function openSalary() {
 
       <article class="card c-12" aria-labelledby="newpol-q">
         <div class="card-head"><h2 id="newpol-q" class="q">Newest policy items</h2></div>
-        <p v-if="!policy.length" class="muted"><b>No policy items yet.</b></p>
+        <p v-if="policyLoading" class="small muted">Loading policies…</p>
+        <p v-else-if="!policyTop.length" class="muted"><b>No policy items yet.</b></p>
         <ul v-else class="mini-list pol-list">
-          <li v-for="p in policy" :key="p.label">
-            <span class="small muted">{{ fmtDate(p.date) }}</span>
-            <b>{{ p.label }}</b>
+          <li v-for="p in policyTop" :key="p.id">
+            <span class="small muted">{{ fmtDate(p.publishedDate) }}</span>
+            <b>{{ p.title }}</b>
           </li>
         </ul>
         <button type="button" class="btn btn-ghost link-btn" @click="go('policy')">All policy items<Icon :path="ICON.arrow" small /></button>

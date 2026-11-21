@@ -1,17 +1,23 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
 import DataAlerts from '@/components/ui/DataAlerts.vue'
 import CardState from '@/components/ui/CardState.vue'
 import { ICON, fmtDate, isExternalUrl } from '@/lib/format'
-import { useInsights } from '@/composables/useInsights'
+import { parts } from '@/lib/links'
+import { usePolicyApi } from '@/composables/usePolicyApi'
 import { usePolicyRead } from '@/composables/usePolicyRead'
 
 const PAGE = 3
-const { policySorted } = useInsights()
+const { items: policyItems, loading, error, ensure, summarize } = usePolicyApi()
 const { isUnread, markRead } = usePolicyRead()
 const showOlder = ref(false)
-const items = computed(() => (showOlder.value ? policySorted.value : policySorted.value.slice(0, PAGE)))
+const items = computed(() => (showOlder.value ? policyItems.value : policyItems.value.slice(0, PAGE)))
+
+onMounted(async () => {
+  await ensure()
+  summarize()
+})
 </script>
 
 <template>
@@ -21,20 +27,53 @@ const items = computed(() => (showOlder.value ? policySorted.value : policySorte
     </div>
     <DataAlerts />
 
-    <CardState :empty="!policySorted.length">
+    <p v-if="error" class="small" role="alert">{{ error }}</p>
+    <CardState :empty="!loading && !policyItems.length">
       <template #empty><b>No policy items yet.</b> Check again after the next data update.</template>
-      <ol class="tl">
+      <p v-if="loading" class="small muted">Loading policies…</p>
+      <ol v-else class="tl">
         <li v-for="p in items" :key="p.id" :class="['tl-item', { unread: isUnread(p) }]" @click="markRead(p.id)">
           <p class="small muted">
             <b class="date">{{ fmtDate(p.publishedDate) }}</b>
           </p>
           <div class="tl-body">
-            <h2 class="q">
+            <h3 class="q">
               <button type="button" class="tl-title" @click.stop="markRead(p.id)">
                 <span v-if="isUnread(p)" class="sr">New, unread: </span>{{ p.title }}
               </button>
-            </h2>
-            <p>{{ p.summary }}</p>
+            </h3>
+            <p v-if="p.title !== p.originalTitle" class="small muted">{{ p.originalTitle }}</p>
+            <p>
+              <template v-if="p.summary">
+                <template v-for="(chunk, i) in parts(p.summary)" :key="i">
+                  <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer" @click="markRead(p.id)">{{ chunk.text }}</a>
+                  <template v-else>{{ chunk.text }}</template>
+                </template>
+              </template>
+              <span v-else class="muted">Writing a short summary…</span>
+            </p>
+            <div v-if="p.keyChanges.length" class="points">
+              <p class="small"><b>Key changes</b></p>
+              <ul>
+                <li v-for="point in p.keyChanges" :key="point" class="small">
+                  <template v-for="(chunk, i) in parts(point)" :key="i">
+                    <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer" @click="markRead(p.id)">{{ chunk.text }}</a>
+                    <template v-else>{{ chunk.text }}</template>
+                  </template>
+                </li>
+              </ul>
+            </div>
+            <div v-if="p.keyUpdates.length" class="points">
+              <p class="small"><b>Key updates</b></p>
+              <ul>
+                <li v-for="point in p.keyUpdates" :key="point" class="small">
+                  <template v-for="(chunk, i) in parts(point)" :key="i">
+                    <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer" @click="markRead(p.id)">{{ chunk.text }}</a>
+                    <template v-else>{{ chunk.text }}</template>
+                  </template>
+                </li>
+              </ul>
+            </div>
             <p class="small muted meta">
               <span>
                 Source:
@@ -46,7 +85,7 @@ const items = computed(() => (showOlder.value ? policySorted.value : policySorte
         </li>
       </ol>
       <button
-        v-if="policySorted.length > PAGE"
+        v-if="policyItems.length > PAGE"
         type="button"
         class="btn btn-secondary more"
         :aria-expanded="showOlder"
@@ -80,6 +119,8 @@ const items = computed(() => (showOlder.value ? policySorted.value : policySorte
 .tl-body { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
 .meta { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); }
 .more { align-self: flex-start; }
+.points ul { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 4px; }
+.points { display: flex; flex-direction: column; gap: 4px; }
 @media (max-width: 639px) {
   .tl-item { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
 }
