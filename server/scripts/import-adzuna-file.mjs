@@ -9,15 +9,19 @@ loadEnv(resolve(root, "../.env"));
 
 const fileArg = process.argv[2];
 const role = readFlag("--role");
-if (!fileArg || !role) {
-  throw new Error("usage: node scripts/import-adzuna-file.mjs <file.json> --role <role-id>");
+const query = readFlag("--query");
+const lang = readFlag("--lang");
+if (!fileArg || !role || !query || !lang) {
+  throw new Error(
+    "usage: node scripts/import-adzuna-file.mjs <file.json> --role <role-id> --query <text> --lang <de|en>",
+  );
 }
 
 const filePath = resolve(process.cwd(), fileArg);
 const data = JSON.parse(readFileSync(filePath, "utf8"));
 const results = data.results ?? [];
-if (typeof data.count !== "number" || results.length === 0) {
-  throw new Error("Adzuna file has no count or results");
+if (typeof data.count !== "number") {
+  throw new Error("Adzuna file has no count");
 }
 
 const fetchedAt = statSync(filePath).mtime.toISOString();
@@ -27,18 +31,17 @@ const client = new pg.Client({
 
 await client.connect();
 try {
-  const ids = results.map((result) => {
+  for (const result of results) {
     if (!result.id || !result.title || !result.redirect_url) {
       throw new Error("A result is missing id, title, or redirect_url");
     }
-    return String(result.id);
-  });
+  }
   const existing = await client.query(
-    "SELECT external_id FROM postings WHERE source_id = 'adzuna' AND external_id = ANY($1::text[])",
-    [ids],
+    "SELECT 1 FROM metrics WHERE source_id = 'adzuna' AND role = $1 AND label = $2 AND period = $3",
+    [role, query, lang],
   );
   if (existing.rowCount > 0) {
-    console.log(`already imported ${existing.rowCount} postings, nothing written`);
+    console.log(`already imported ${role} ${lang}, nothing written`);
     process.exit(0);
   }
 
@@ -50,9 +53,9 @@ try {
   const snapshotId = snapshot.rows[0].id;
   await client.query(
     `INSERT INTO metrics
-      (snapshot_id, label, value, unit, question, role, geo, source_id, source_url, fetched_at)
-     VALUES ($1, $2, $3, 'postings', 'A', $4, 'CH', 'adzuna', 'https://www.adzuna.ch/', $5)`,
-    [snapshotId, role, String(data.count), role, fetchedAt],
+      (snapshot_id, label, value, unit, question, role, geo, period, source_id, source_url, fetched_at)
+     VALUES ($1, $2, $3, 'postings', 'A', $4, 'CH', $5, 'adzuna', 'https://www.adzuna.ch/', $6)`,
+    [snapshotId, query, String(data.count), role, lang, fetchedAt],
   );
   for (const result of results) {
     await client.query(

@@ -3,6 +3,8 @@ import { DbService } from "../core/db.service";
 
 interface MetricRow {
   role: string;
+  label: string;
+  period: string | null;
   value: string;
   unit: string | null;
   geo: string | null;
@@ -30,6 +32,8 @@ export interface DemandPosting {
 
 export interface DemandRole {
   role: string;
+  query: string;
+  lang: string | null;
   openings: number;
   sampleSize: number;
   geo: string | null;
@@ -47,11 +51,10 @@ export class DemandService {
 
   async list(): Promise<{ roles: DemandRole[] }> {
     const metrics = await this.db.pool.query<MetricRow>(
-      `SELECT DISTINCT ON (role)
-         role, value, unit, geo, source_id, source_url, fetched_at, snapshot_id
+      `SELECT role, label, period, value, unit, geo, source_id, source_url, fetched_at, snapshot_id
        FROM metrics
        WHERE question = 'A' AND role IS NOT NULL
-       ORDER BY role, fetched_at DESC`,
+       ORDER BY role, period, fetched_at DESC`,
     );
 
     const roles: DemandRole[] = [];
@@ -81,6 +84,8 @@ export class DemandService {
       }
       roles.push({
         role: metric.role,
+        query: metric.label,
+        lang: metric.period,
         openings: Number(metric.value),
         sampleSize: mapped.length,
         geo: metric.geo,
