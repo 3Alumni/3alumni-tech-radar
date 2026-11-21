@@ -1,141 +1,82 @@
 import { Injectable } from "@nestjs/common";
-import { ConfigService } from "../core/config.service";
 import { DbService } from "../core/db.service";
-import { EscoHit, loadCache } from "./esco";
-import { normalizePhrase, phrasesFromPosting, technical } from "./phrases";
 
-interface PostingRow {
-  role: string;
-  title: string;
-  snippet: string | null;
-  source_url: string | null;
-  fetched_at: Date;
-}
-
-interface SkillCount {
-  phrase: string;
-  count: number;
-  roles: Map<string, number>;
-}
-
-export interface SkillMatch {
-  label: string;
-  esco: string | null;
-  count: number;
-  roles: Record<string, number>;
-}
-
-export interface UnmatchedSkill {
-  phrase: string;
-  count: number;
-  roles: Record<string, number>;
-}
+const MODEL = "gpt-6-luna";
 
 @Injectable()
 export class SkillsService {
-  constructor(
-    private readonly db: DbService,
-    private readonly config: ConfigService,
-  ) {}
+  constructor(private readonly db: DbService) {}
 
-  match(phrase: string): { label: string; esco?: string } | null {
-    const mapping = this.config
-      .synonyms()
-      .find((item) => normalizePhrase(item.phrase) === normalizePhrase(phrase));
-    if (!mapping) {
-      return null;
-    }
-    return { label: mapping.label, esco: mapping.esco };
-  }
-
-  async list(role?: string): Promise<{
-    basis: {
-      postings: number;
-      text: string;
-      sourceId: string;
-      sourceUrl: string;
-      dictionary: string;
-      dictionaryUrl: string;
-    };
-    matched: SkillMatch[];
-    unmatched: UnmatchedSkill[];
-  }> {
-    const postings = await this.db.pool.query<PostingRow>(
-      `SELECT role, title, snippet,
-              (SELECT source_url FROM metrics WHERE snapshot_id = postings.snapshot_id LIMIT 1) AS source_url,
-              fetched_at
-       FROM postings
-       WHERE ($1::text IS NULL OR role = $1)`,
-      [role ?? null],
-    );
-    const counts = new Map<string, SkillCount>();
-    for (const posting of postings.rows) {
-      const seen = new Set<string>();
-      for (const phrase of phrasesFromPosting(posting.title, posting.snippet ?? "")) {
-        const key = normalizePhrase(phrase);
-        if (seen.has(key)) {
-          continue;
-        }
-        seen.add(key);
-        const current = counts.get(key) ?? { phrase, count: 0, roles: new Map() };
-        current.count += 1;
-        current.roles.set(posting.role, (current.roles.get(posting.role) ?? 0) + 1);
-        counts.set(key, current);
-      }
-    }
-
-    const cache = loadCache();
-    const matched: SkillMatch[] = [];
-    const unmatched: UnmatchedSkill[] = [];
-    for (const [key, count] of counts) {
-      const roles = Object.fromEntries(count.roles);
-      const synonym = this.match(count.phrase);
-      const esco = cache[key] as EscoHit | null | undefined;
-      if (synonym) {
-        pushMatch(matched, synonym.label, synonym.esco ?? null, count.count, roles);
-        continue;
-      }
-      if (esco) {
-        pushMatch(matched, esco.label, esco.uri, count.count, roles);
-        continue;
-      }
-      if (technical(count.phrase)) {
-        unmatched.push({ phrase: count.phrase, count: count.count, roles });
-      }
-    }
-
-    matched.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
-    unmatched.sort((a, b) => b.count - a.count || a.phrase.localeCompare(b.phrase));
-    const sourceUrl = postings.rows.find((row) => row.source_url)?.source_url ?? "https://www.adzuna.ch/";
+  async list(role?: string) {
+    const [esco, own, skipped, basis] = await Promise.all([
+      this.grouped("esco", role),
+      this.grouped("new", role),
+      this.skipped(role),
+      this.basis(role),
+    ]);
     return {
       basis: {
-        postings: postings.rows.length,
+        postings: basis.postings,
+        model: MODEL,
         text: "title and description snippet",
         sourceId: "adzuna",
-        sourceUrl,
+        sourceUrl: "https://www.adzuna.ch/",
         dictionary: "ESCO v1.2.0",
         dictionaryUrl: "https://esco.ec.europa.eu/en/classification/skill_main",
+        skipped,
       },
-      matched,
-      unmatched,
+      esco,
+      own,
     };
   }
-}
 
-function pushMatch(
-  matched: SkillMatch[],
-  label: string,
-  esco: string | null,
-  count: number,
-  roles: Record<string, number>,
-) {
-  const existing = matched.find((item) => item.label === label && item.esco === esco);
-  if (!existing) {
-    matched.push({ label, esco, count, roles });
-    return;
+  private async grouped(bucket: "esco" | "new", role?: string) {
+    const result = await this.db.pool.query<{
+      label: string;
+      esco_uri: string | null;
+      role: string;
+      postings: number;
+    }>(
+      `SELECT COALESCE(s.esco_label, s.name) AS label,
+              s.esco_uri,
+              p.role,
+              count(DISTINCT s.posting_id)::int AS postings
+       FROM extracted_skills s
+       JOIN postings p ON p.id = s.posting_id
+       WHERE s.model = $1 AND s.bucket = $2 AND ($3::text IS NULL OR p.role = $3)
+       GROUP BY 1, 2, 3`,
+      [MODEL, bucket, role ?? null],
+    );
+    const skills = new Map<string, { label: string; esco: string | null; count: number; roles: Record<string, number> }>();
+    for (const row of result.rows) {
+      const key = `${row.label}|${row.esco_uri ?? ""}`;
+      const current = skills.get(key) ?? { label: row.label, esco: row.esco_uri, count: 0, roles: {} };
+      current.count += row.postings;
+      current.roles[row.role] = row.postings;
+      skills.set(key, current);
+    }
+    return [...skills.values()].sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
   }
-  existing.count += count;
-  for (const [role, value] of Object.entries(roles)) {
-    existing.roles[role] = (existing.roles[role] ?? 0) + value;
+
+  private async skipped(role?: string) {
+    const result = await this.db.pool.query<{ count: number }>(
+      `SELECT count(*)::int AS count
+       FROM extracted_skills s
+       JOIN postings p ON p.id = s.posting_id
+       WHERE s.model = $1 AND s.bucket = 'drop' AND ($2::text IS NULL OR p.role = $2)`,
+      [MODEL, role ?? null],
+    );
+    return result.rows[0]?.count ?? 0;
+  }
+
+  private async basis(role?: string) {
+    const result = await this.db.pool.query<{ postings: number }>(
+      `SELECT count(DISTINCT posting_id)::int AS postings
+       FROM skill_runs r
+       JOIN postings p ON p.id = r.posting_id
+       WHERE r.model = $1 AND ($2::text IS NULL OR p.role = $2)`,
+      [MODEL, role ?? null],
+    );
+    return { postings: result.rows[0]?.postings ?? 0 };
   }
 }
