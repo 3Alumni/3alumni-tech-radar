@@ -115,7 +115,7 @@ function openSalary() {
         <div v-if="current" class="kpi">
           <span class="big">{{ fmtNum(kpi) }}</span>
           <span class="muted small kpi-note">
-            {{ region === 'all' ? 'open ads in this search' : 'saved ads in ' + region }}
+            {{ region === 'all' ? 'open ads in this search' : 'published jobs in ' + region }}
           </span>
         </div>
         <p v-if="current && weekDeltaPct != null && priorOpenings != null" class="week">
@@ -135,7 +135,7 @@ function openSalary() {
         <div class="card-head">
           <h2 id="canton-q" class="q">Where are the jobs?</h2>
           <p v-if="current">
-            Based on {{ current.sampleSize }} saved ads, not all {{ current.openings }}.
+            Based on {{ current.sampleSize }} published jobs, not all {{ current.openings }}.
             <template v-if="current.unknownCanton"> {{ current.unknownCanton }} have no canton.</template>
           </p>
         </div>
@@ -143,7 +143,7 @@ function openSalary() {
           <CantonMap :cantons="shownCantons" :selected="region" />
           <CantonBars :cantons="shownCantons" :selected="region" @pick="toggleRegion" />
         </template>
-        <p v-else class="muted"><b>No canton</b> on the saved ads for this search.</p>
+        <p v-else class="muted"><b>No canton</b> in the published jobs for this search.</p>
       </article>
     </div>
   </section>

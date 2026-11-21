@@ -35,11 +35,6 @@ const own = computed(() => {
   const frequent = rows.filter((row) => (row.mentions ?? 0) >= 2)
   return (frequent.length >= 3 ? frequent : rows).slice(0, 12)
 })
-const escoAnswer = computed(() => {
-  const [a, b] = esco.value
-  if (!a) return 'No exact ESCO preferred label in these ads.'
-  return b ? `${a.name} and ${b.name} come up most often.` : `${a.name} comes up most often.`
-})
 </script>
 
 <template>
@@ -60,26 +55,25 @@ const escoAnswer = computed(() => {
       </div>
     </div>
 
+    <p class="muted esco-note">
+      ESCO is the EU's official list of skills and jobs. These are the skills from that list that the job ads name.
+    </p>
+
     <p v-if="status === 'loading'" class="muted">Loading skills…</p>
     <p v-else-if="status === 'error'" class="muted">Could not load skills. {{ errorMessage }}</p>
 
     <div v-else class="cards">
-      <article class="card span-2" aria-labelledby="skill-q">
+      <article class="card" aria-labelledby="skill-q">
         <div class="card-head">
           <h2 id="skill-q" class="q">Which skills match ESCO?</h2>
-          <p>{{ escoAnswer }}</p>
         </div>
         <SkillBars v-if="esco.length" :skills="esco" :role-label="roleLabel" :ads="ads" />
         <p v-else class="muted"><b>No ESCO skill</b> with this exact preferred label.</p>
-        <p v-if="ads" class="small muted">
-          Share of the {{ ads }} saved ads we read, English and German together. ESCO preferred labels only.
-        </p>
       </article>
 
-      <article class="card span-2" aria-labelledby="own-q">
+      <article class="card" aria-labelledby="own-q">
         <div class="card-head">
           <h2 id="own-q" class="q">Not in ESCO</h2>
-          <p>Tools named in the ad text, with no exact ESCO preferred label.</p>
         </div>
         <SkillBars v-if="own.length" :skills="own" :role-label="roleLabel" :ads="ads" />
         <p v-else class="muted"><b>No extra tools</b> in these ads.</p>
@@ -89,5 +83,6 @@ const escoAnswer = computed(() => {
 </template>
 
 <style scoped>
+.esco-note { margin-bottom: calc(-1 * var(--space-3)); }
 .filters { display: flex; align-items: flex-end; gap: var(--space-3); flex-wrap: wrap; }
 </style>

@@ -50,7 +50,7 @@ const aria = computed(
         {{ s.sharePct }}%<Icon v-if="!compact && s.trend" :path="ICON[s.trend]" small />
       </span>
       <span class="tip tip-in">
-        <template v-if="s.mentions && ads">Named in {{ s.mentions }} of {{ ads }} saved ads</template>
+        <template v-if="s.mentions && ads">Named in {{ s.mentions }} of {{ ads }} published jobs</template>
         <template v-else>In {{ s.sharePct }}% of {{ roleLabel }} ads</template>
         <template v-if="s.trend"> · {{ TREND_WORD[s.trend] }}</template>{{ s.name === highlight ? ' · rising fastest' : '' }}
       </span>

@@ -111,7 +111,7 @@ function openSalary() {
         <span class="tile-more">Demand<Icon :path="ICON.arrow" small /></span>
       </button>
       <button type="button" class="tile" @click="go('demand')">
-        <span class="small muted">Most saved ads in</span>
+        <span class="small muted">Most published jobs in</span>
         <span class="tile-v">{{ topCanton?.name ?? '—' }}</span>
         <span class="tile-more">Demand<Icon :path="ICON.arrow" small /></span>
       </button>
@@ -141,7 +141,7 @@ function openSalary() {
 
       <article class="card c-6" aria-labelledby="emp-q">
         <div class="card-head"><h2 id="emp-q" class="q">Top employers</h2></div>
-        <p v-if="!employerTop.length" class="muted"><b>No companies</b> in the saved ads for this role.</p>
+        <p v-if="!employerTop.length" class="muted"><b>No companies</b> in the published jobs for this role.</p>
         <ul v-else class="mini-list">
           <li v-for="e in employerTop" :key="e.name" class="mini-row">
             <span><b>{{ e.name }}</b></span>

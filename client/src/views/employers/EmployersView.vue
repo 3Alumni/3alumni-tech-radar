@@ -37,12 +37,6 @@ const companies = computed(() => {
   return [...direct, ...agencies].sort((a, b) => b.jobs - a.jobs || a.name.localeCompare(b.name))
 })
 const list = computed(() => (showAll.value ? companies.value : companies.value.slice(0, PAGE)))
-const answer = computed(() => {
-  const n = companies.value.length
-  if (!n) return 'No companies in the saved ads for this role.'
-  const hidden = hideAgency.value ? ' Recruitment agencies are hidden.' : ''
-  return `${n} ${n === 1 ? 'company appears' : 'companies appear'} in the saved ads for ${roleLabel.value}.${hidden}`
-})
 
 watch(role, () => {
   showAll.value = false
@@ -59,8 +53,6 @@ function resetFilters() {
   <section class="view" aria-labelledby="emp-h">
     <div class="card-head">
       <h1 id="emp-h" class="h1">Employers</h1>
-      <p v-if="status === 'ready'" aria-live="polite">{{ answer }}</p>
-      <p v-else class="muted">Companies hiring for IT roles. Never individual people.</p>
     </div>
 
     <div class="filters">
@@ -89,11 +81,11 @@ function resetFilters() {
         <button type="button" class="btn btn-ghost reset" @click="resetFilters">Reset filters</button>
       </div>
       <table v-else class="tbl cardify">
-        <caption class="sr">Companies in the saved ads for {{ roleLabel }}</caption>
+        <caption class="sr">Companies in the published jobs for {{ roleLabel }}</caption>
         <thead>
           <tr>
             <th scope="col">Company</th>
-            <th scope="col">Saved ads</th>
+            <th scope="col">Published jobs</th>
             <th scope="col">Tags</th>
             <th scope="col"><span class="sr">Link</span></th>
           </tr>
@@ -101,7 +93,7 @@ function resetFilters() {
         <tbody>
           <tr v-for="e in list" :key="e.name">
             <td data-label="Company"><b>{{ e.name }}</b></td>
-            <td data-label="Saved ads" class="num">{{ fmtNum(e.jobs) }}</td>
+            <td data-label="Published jobs" class="num">{{ fmtNum(e.jobs) }}</td>
             <td data-label="Tags">
               <span class="tags">
                 <span v-if="e.agency" class="tag tag-agency">Agency</span>
@@ -136,4 +128,12 @@ function resetFilters() {
 .alert { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 12px 16px; border: var(--border) solid; font-size: 14px; line-height: 20px; }
 .al-empty { background: var(--color-bg); border-color: var(--color-border); }
 .reset { margin-left: auto; }
+/* Tags and the job-ad link share one centre line in every row */
+.tbl td { vertical-align: middle; }
+.tbl .tags { align-items: center; min-height: 28px; }
+.tbl .tag { align-self: center; }
+.tbl .ext { display: inline-flex; align-items: center; min-height: 28px; vertical-align: middle; }
+@media (max-width: 639px) {
+  .tbl.cardify td { align-items: center; }
+}
 </style>
