@@ -17,8 +17,11 @@ const SECTIONS = [
 
 type SectionKey = (typeof SECTIONS)[number]['key']
 
+interface Line { body: string; source: string }
+
 interface Briefing {
-  text: string
+  summary: string
+  items: Line[]
   keyChanges: string[]
   keyUpdates: string[]
   loading: boolean
@@ -57,7 +60,7 @@ async function sync() {
 
 async function load(key: SectionKey) {
   const current = briefings.value[key]
-  if (current?.text || current?.loading) return
+  if (current?.summary || current?.items.length || current?.loading) return
   const section = SECTIONS.find((item) => item.key === key)
   if (!section) return
   briefings.value = { ...briefings.value, [key]: emptyBriefing(true) }
@@ -73,15 +76,21 @@ async function load(key: SectionKey) {
 }
 
 function emptyBriefing(loading: boolean): Briefing {
-  return { text: '', keyChanges: [], keyUpdates: [], loading, error: '' }
+  return { summary: '', items: [], keyChanges: [], keyUpdates: [], loading, error: '' }
 }
 
 async function policyBriefing(): Promise<Briefing> {
-  const response = await fetch(`${API}/questions/E/preview`)
-  if (!response.ok) throw new Error(`Summary ${response.status}`)
-  const body = (await response.json()) as { text?: string; keyChanges?: string[]; keyUpdates?: string[] }
+  const [preview, acts] = await Promise.all([
+    fetch(`${API}/questions/E/preview`),
+    fetch(`${API}/policy`),
+  ])
+  if (!preview.ok) throw new Error(`Summary ${preview.status}`)
+  if (!acts.ok) throw new Error(`Summary ${acts.status}`)
+  const body = (await preview.json()) as { text?: string; keyChanges?: string[]; keyUpdates?: string[] }
+  const rows = (await acts.json()) as { label?: string; value?: string | number; sourceUrl?: string; inForce?: string; reference?: string }[]
   return {
-    text: body.text ?? '',
+    summary: body.text ?? '',
+    items: policyItems(rows),
     keyChanges: body.keyChanges ?? [],
     keyUpdates: body.keyUpdates ?? [],
     loading: false,
@@ -94,8 +103,8 @@ async function pageBriefing(key: Exclude<SectionKey, 'policy'>): Promise<Briefin
   const response = await fetch(`${API}${path}`)
   if (!response.ok) throw new Error(`Summary ${response.status}`)
   const body = await response.json()
-  const text = key === 'demand' ? demandText(body) : key === 'skills' ? skillsText(body) : employersText(body)
-  return { text, keyChanges: [], keyUpdates: [], loading: false, error: '' }
+  const section = key === 'demand' ? demandSection(body) : key === 'skills' ? skillsSection(body) : employersSection(body)
+  return { ...section, keyChanges: [], keyUpdates: [], loading: false, error: '' }
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -105,52 +114,72 @@ const ROLE_LABEL: Record<string, string> = {
 }
 const LANG_LABEL: Record<string, string> = { en: 'English', de: 'German' }
 
-function demandText(body: {
+function demandSection(body: {
   roles?: { role: string; lang: string | null; openings: number; sourceUrl: string; fetchedAt: string; cantons: { canton: string; postings: number }[] }[]
-}): string {
+}): Pick<Briefing, 'summary' | 'items'> {
   const roles = body.roles ?? []
-  if (!roles.length) return 'No saved ads on the Demand page yet.'
+  if (!roles.length) return { summary: 'No saved ads on the Demand page yet.', items: [] }
   const groups = new Map<string, typeof roles>()
   for (const role of roles) {
     const list = groups.get(role.role) ?? []
     list.push(role)
     groups.set(role.role, list)
   }
-  return [...groups.entries()].map(([role, rows]) => {
+  const items = [...groups.entries()].map(([role, rows]) => {
     const counts = rows.map((row) => `${fmtNum(row.openings)} ${LANG_LABEL[row.lang ?? ''] ?? row.lang ?? ''}`.trim())
     const top = rows.flatMap((row) => row.cantons).sort((a, b) => b.postings - a.postings)[0]
     const where = top ? ` Most saved ads are in ${top.canton} (${fmtNum(top.postings)}).` : ''
     const when = rows[0]?.fetchedAt ? ` · ${fmtDate(rows[0].fetchedAt.slice(0, 10))}` : ''
-    return `${ROLE_LABEL[role] ?? role}: ${counts.join(' and ')} ads.${where}\nSource: Adzuna, ${rows[0]?.sourceUrl ?? 'https://www.adzuna.ch/'}${when}`
-  }).join('\n\n')
+    return {
+      body: `${ROLE_LABEL[role] ?? role}: ${counts.join(' and ')}.${where}`,
+      source: `Adzuna, ${rows[0]?.sourceUrl ?? 'https://www.adzuna.ch/'}${when}`,
+    }
+  })
+  return { summary: '', items }
 }
 
-function skillsText(body: {
+function skillsSection(body: {
   basis?: { postings: number; sourceUrl: string; dictionaryUrl: string }
   esco?: { label: string; count: number }[]
-}): string {
+}): Pick<Briefing, 'summary' | 'items'> {
   const ads = body.basis?.postings ?? 0
-  const skills = (body.esco ?? []).filter((skill) => skill.count > 0).slice(0, 6)
-  if (!ads || !skills.length) return 'No skills on the Skills page yet.'
-  const named = skills.map((skill) => `${skill.label} in ${fmtNum(skill.count)}`).join(', ')
-  return `${fmtNum(ads)} ads were read. Skills named most often: ${named}.\nSource: Adzuna, ${body.basis?.sourceUrl ?? 'https://www.adzuna.ch/'} · ESCO, ${body.basis?.dictionaryUrl ?? 'https://esco.ec.europa.eu/en/classification/skill_main'}`
+  const skills = (body.esco ?? []).filter((skill) => skill.count > 0).slice(0, 8)
+  const source = `Adzuna, ${body.basis?.sourceUrl ?? 'https://www.adzuna.ch/'} · ESCO, ${body.basis?.dictionaryUrl ?? 'https://esco.ec.europa.eu/en/classification/skill_main'}`
+  if (!ads || !skills.length) return { summary: '', items: [] }
+  return {
+    summary: '',
+    items: skills.map((skill) => ({ body: `${skill.label}: ${fmtNum(skill.count)} of ${fmtNum(ads)} ads`, source })),
+  }
 }
 
-function employersText(body: {
+function employersSection(body: {
   basis?: { postings: number; sourceUrl: string }
   outreach?: { company: string; postings: number; urls: string[] }[]
   agencies?: unknown[]
-}): string {
+}): Pick<Briefing, 'summary' | 'items'> {
   const ads = body.basis?.postings ?? 0
   const companies = body.outreach ?? []
-  if (!ads || !companies.length) return 'No companies on the Employers page yet.'
-  const top = companies.slice(0, 5).map((company) => {
-    const link = company.urls[0] ?? body.basis?.sourceUrl ?? 'https://www.adzuna.ch/'
-    return `${company.company} has ${fmtNum(company.postings)} saved ads.\nSource: ${company.company}, ${link}`
-  })
-  const agencies = body.agencies?.length ?? 0
-  const intro = `${fmtNum(ads)} saved ads, ${fmtNum(companies.length)} companies to approach. ${fmtNum(agencies)} recruitment agencies are left off that list.\nSource: Adzuna, ${body.basis?.sourceUrl ?? 'https://www.adzuna.ch/'}`
-  return [intro, ...top].join('\n\n')
+  if (!ads || !companies.length) return { summary: '', items: [] }
+  return {
+    summary: '',
+    items: companies.slice(0, 8).map((company) => ({
+      body: `${company.company}: ${fmtNum(company.postings)} saved ads`,
+      source: `${company.company}, ${company.urls[0] ?? body.basis?.sourceUrl ?? 'https://www.adzuna.ch/'}`,
+    })),
+  }
+}
+
+function policyItems(rows: { label?: string; value?: string | number; sourceUrl?: string; inForce?: string; reference?: string }[]): Line[] {
+  return [...rows]
+    .filter((row) => row.label && row.sourceUrl)
+    .sort((a, b) => String(b.value ?? '').localeCompare(String(a.value ?? '')))
+    .slice(0, 5)
+    .map((act) => {
+      const published = fmtDate(String(act.value ?? '').slice(0, 10))
+      const ref = act.reference ? ` ${act.reference}.` : ''
+      const force = act.inForce ? ` In force ${fmtDate(String(act.inForce).slice(0, 10))}.` : ''
+      return { body: `${published}: ${act.label}.${ref}${force}`, source: `Fedlex, ${act.sourceUrl}` }
+    })
 }
 
 function touch() {
@@ -253,8 +282,8 @@ function isoWeek(iso: string) {
               <p class="label">{{ section.label }}</p>
               <RadarLoader v-if="briefings[section.key]?.loading" text="Writing the summary…" compact />
               <p v-else-if="briefings[section.key]?.error" class="small" role="alert">{{ briefings[section.key]?.error }}</p>
-              <template v-else-if="briefings[section.key]?.text">
-                <template v-for="(point, n) in letterPoints(briefings[section.key]!.text)" :key="n">
+              <template v-else-if="briefings[section.key]?.summary || briefings[section.key]?.items.length">
+                <template v-for="(point, n) in letterPoints(briefings[section.key]!.summary)" :key="'s' + n">
                   <p>
                     <template v-for="(chunk, i) in parts(point.body)" :key="i">
                       <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
@@ -269,6 +298,18 @@ function isoWeek(iso: string) {
                     </template>
                   </p>
                 </template>
+                <ul v-if="briefings[section.key]!.items.length">
+                  <li v-for="item in briefings[section.key]!.items" :key="item.body">
+                    {{ item.body }}
+                    <span class="small muted">
+                      Source:
+                      <template v-for="(chunk, i) in parts(item.source)" :key="i">
+                        <a v-if="chunk.href" :href="chunk.href" target="_blank" rel="noopener noreferrer">{{ chunk.text }}</a>
+                        <template v-else>{{ chunk.text }}</template>
+                      </template>
+                    </span>
+                  </li>
+                </ul>
                 <div v-if="briefings[section.key]!.keyChanges.length">
                   <p class="label">Key changes</p>
                   <ul>
