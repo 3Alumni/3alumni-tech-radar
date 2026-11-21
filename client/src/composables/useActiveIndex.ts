@@ -31,7 +31,10 @@ export function useActiveIndex(count: Ref<number>) {
     active.value = null
   }
   function hover(i: number | null) {
-    if (!focused.value) active.value = i
+    // A click focuses the chart. Pointer movement still picks the day under the cursor.
+    // Leaving the chart keeps a keyboard selection, and clears a pointer selection.
+    if (i === null && focused.value) return
+    active.value = i
   }
 
   return { active, onKey, onFocus, onBlur, hover }

@@ -11,7 +11,7 @@ import { useActiveIndex } from '@/composables/useActiveIndex'
  * markers, callout and the hover/keyboard layer.
  */
 interface Point { key: string; label: string; short: string; value: number }
-const props = defineProps<{ points: Point[]; summary: string; unit?: string }>()
+const props = defineProps<{ points: Point[]; summary: string; unit?: string; step?: string }>()
 
 const HEIGHT = 160
 const TOP = 48 // room for the callout above the highest point
@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
       :class="['trend', { settled }]"
       role="img"
       tabindex="0"
-      :aria-label="summary + '. Use arrow keys to read each month.'"
+      :aria-label="summary + '. Use arrow keys to read each ' + (step ?? 'month') + '.'"
       @keydown="onKey"
       @focus="onFocus"
       @blur="onBlur"
@@ -134,10 +134,9 @@ onBeforeUnmount(() => {
         <path ref="lineEl" class="line" />
         <g
           v-for="v in valueLabels"
-          v-show="v.i !== focusIdx"
           :key="v.key"
           class="vlabel"
-          :style="{ transform: `translate(${v.x}px, ${v.y}px)` }"
+          :style="{ transform: `translate(${v.x}px, ${v.y}px)`, opacity: v.i === focusIdx ? 0 : 1 }"
         >
           <circle r="3.5" class="vdot" />
           <text y="-12" text-anchor="middle">{{ v.text }}</text>
@@ -147,9 +146,9 @@ onBeforeUnmount(() => {
           <circle r="6" class="ring-dot" />
         </g>
         <g
-          v-if="focusPt && active !== null && active !== lastIdx"
+          v-if="focusPt"
           class="marker"
-          :style="{ transform: `translate(${focusPt.x}px, ${focusPt.y}px)` }"
+          :style="{ transform: `translate(${focusPt.x}px, ${focusPt.y}px)`, opacity: active !== null && active !== lastIdx ? 1 : 0 }"
         >
           <circle r="5" />
         </g>
@@ -161,7 +160,7 @@ onBeforeUnmount(() => {
         :style="{ left: focusPt.x + 'px', top: focusPt.y + 'px' }"
         aria-hidden="true"
       >
-        <b>{{ fmtNum(focusPt.value) }}</b><template v-if="active !== null"> {{ unitText }}</template> · {{ focusPt.label }}
+        <b>{{ fmtNum(focusPt.value) }}</b>{{ active !== null ? ' ' + unitText : '' }} · {{ focusPt.label }}
       </div>
 
       <div class="trend-hit" :style="{ gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }" aria-hidden="true">
@@ -185,8 +184,8 @@ onBeforeUnmount(() => {
 .line { fill: none; stroke: var(--color-action); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .cross { stroke: var(--color-text); stroke-width: 1; }
 
-/* Latest month: white ring on the red line, with a quiet halo once the line has drawn. */
-.settled .ring, .settled .marker { transition: transform .5s var(--ease-out); }
+/* Latest day slides only when the series changes. The explored day snaps, so the dot stays on the line. */
+.settled .ring { transition: transform .5s var(--ease-out); }
 .ring-dot { fill: var(--color-surface); stroke: var(--color-action); stroke-width: 3; }
 .ring-halo { fill: none; stroke: var(--color-action); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: halo 1.6s var(--ease-out) 1s 2 both; }
 .settled .vlabel { transition: transform .5s var(--ease-out); }
@@ -204,7 +203,7 @@ onBeforeUnmount(() => {
   box-shadow: 0 2px 0 var(--color-border); font-size: 14px; line-height: 20px; font-weight: 600;
   padding: 6px 12px; white-space: nowrap; pointer-events: none;
 }
-.settled .callout { transition: left .5s var(--ease-out), top .5s var(--ease-out); }
+.settled .callout:not(.live) { transition: left .5s var(--ease-out), top .5s var(--ease-out); }
 .callout b { font-weight: 700; font-variant-numeric: tabular-nums; }
 .callout::after {
   content: ""; position: absolute; top: 100%; left: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px;

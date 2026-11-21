@@ -1,13 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Icon from '@/components/ui/Icon.vue'
-import SourceChip from '@/components/ui/SourceChip.vue'
 import CantonBars from '@/components/charts/CantonBars.vue'
 import CantonMap from '@/components/charts/CantonMap.vue'
 import TrendLine from '@/components/charts/TrendLine.vue'
 import { ICON, fmtDate, fmtNum, fmtPct } from '@/lib/format'
 import { cantonMapName, useDemand } from '@/composables/useDemand'
-import { DEMAND_WEEK_AGO, weekAgoOpenings } from '@/data/demandWeekAgo.sample'
+import { DEMAND_WEEK_AGO, sampleDays, weekAgoOpenings } from '@/data/demandWeekAgo.sample'
 import { useSalaryDialog } from '@/composables/useSalaryDialog'
 
 const ROLES = [
@@ -30,6 +29,9 @@ const cantons = computed(() =>
 const shownCantons = computed(() =>
   region.value === 'all' ? cantons.value : cantons.value.filter((row) => row.canton === region.value),
 )
+watch(cantons, (rows) => {
+  if (region.value !== 'all' && !rows.some((row) => row.canton === region.value)) region.value = 'all'
+})
 const kpi = computed(() => {
   if (!current.value) return 0
   if (region.value === 'all') return current.value.openings
@@ -42,28 +44,24 @@ const weekDeltaPct = computed(() => {
   return Math.round((current.value.openings / prior - 1) * 100)
 })
 const trendPoints = computed(() => {
-  const prior = priorOpenings.value
-  if (!current.value || prior == null) return []
-  const now = current.value.fetchedAt.slice(0, 10)
-  return [
-    {
-      key: DEMAND_WEEK_AGO.asOf,
-      label: `${fmtDate(DEMAND_WEEK_AGO.asOf)}, sample`,
-      short: fmtDate(DEMAND_WEEK_AGO.asOf).replace(/ \d{4}$/, ''),
-      value: prior,
-    },
-    {
-      key: now,
-      label: fmtDate(now),
-      short: fmtDate(now).replace(/ \d{4}$/, ''),
-      value: current.value.openings,
-    },
-  ]
+  if (!current.value || region.value !== 'all') return []
+  const today = current.value.fetchedAt.slice(0, 10)
+  const past = sampleDays(role.value, lang.value).filter((day) => day.date < today)
+  if (!past.length) return []
+  const days = [...past.map((day) => ({ ...day, live: false })), { date: today, openings: current.value.openings, live: true }]
+  return days.map((day) => ({
+    key: day.date,
+    label: day.live ? fmtDate(day.date) : `${fmtDate(day.date)}, sample`,
+    short: fmtDate(day.date).replace(/ \d{4}$/, ''),
+    value: day.openings,
+  }))
 })
 const trendSummary = computed(() => {
-  const [then, now] = trendPoints.value
-  if (!then || !now || !current.value) return ''
-  return `${current.value.query}: ${fmtNum(then.value)} sample ads on ${then.label}, ${fmtNum(now.value)} Adzuna ads on ${now.label}`
+  const points = trendPoints.value
+  const first = points[0]
+  const last = points[points.length - 1]
+  if (!first || !last || !current.value) return ''
+  return `${current.value.query}, one point per day: ${fmtNum(first.value)} sample ads on ${first.label}, ${fmtNum(last.value)} Adzuna ads on ${last.label}`
 })
 
 function toggleRegion(canton: string) {
@@ -113,7 +111,6 @@ function openSalary() {
       <article class="card" aria-labelledby="kpi-q">
         <div class="card-head">
           <h2 id="kpi-q" class="q">Is there work for {{ roleLabel }}?</h2>
-          <p v-if="current">{{ current.query }}: {{ fmtNum(current.openings) }} open ads in Adzuna right now.</p>
         </div>
         <div v-if="current" class="kpi">
           <span class="big">{{ fmtNum(kpi) }}</span>
@@ -127,14 +124,12 @@ function openSalary() {
             {{ fmtPct(weekDeltaPct, true) }} vs {{ fmtDate(DEMAND_WEEK_AGO.asOf) }}
           </span>
           <span class="tag tag-sample">Sample</span>
-          <span class="muted small">{{ fmtNum(priorOpenings) }} a week ago. Invented, not an Adzuna count.</span>
         </p>
-        <TrendLine v-if="trendPoints.length" :points="trendPoints" :summary="trendSummary" />
         <p v-if="!current" class="muted"><b>No job ads yet</b> for this role and language.</p>
         <button type="button" class="btn btn-ghost sal-link" :disabled="!salaryTrend" @click="openSalary">
           Average IT salary, last 12 months<Icon :path="ICON.arrow" small />
         </button>
-        <SourceChip v-if="current" :names="['Adzuna']" :href="current.sourceUrl" :date="current.fetchedAt" />
+        <TrendLine v-if="trendPoints.length" :points="trendPoints" :summary="trendSummary" step="day" />
       </article>
 
       <article class="card" aria-labelledby="canton-q">
@@ -150,7 +145,6 @@ function openSalary() {
           <CantonBars :cantons="shownCantons" :selected="region" @pick="toggleRegion" />
         </template>
         <p v-else class="muted"><b>No canton</b> on the saved ads for this search.</p>
-        <SourceChip v-if="current" :names="['Adzuna']" :href="current.sourceUrl" :date="current.fetchedAt" />
       </article>
     </div>
   </section>
