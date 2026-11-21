@@ -237,7 +237,6 @@ function isoWeek(iso: string) {
       <form class="panel" novalidate @submit.prevent="submit" @change="touch(); sync()">
         <div class="card-head">
           <h1 id="mail-h" class="h2">Get a summary by email</h1>
-          <p class="muted">Plain language, with a source link under each point.</p>
         </div>
         <fieldset class="checks">
           <legend>Sections</legend>
