@@ -21,14 +21,28 @@ WHERE {
   ?expr jolux:language <http://publications.europa.eu/resource/authority/language/DEU> ;
         jolux:title ?title .
   FILTER(?date >= "2024-01-01"^^xsd:date)
+  # Question E only: asylum, status F, temporary protection, foreigner integration, job-registration duty.
+  # "integration" alone also matches disability-insurance reform, so it is not used by itself.
   FILTER(
     CONTAINS(LCASE(STR(?title)), "asyl") ||
-    CONTAINS(LCASE(STR(?title)), "integration") ||
-    CONTAINS(LCASE(STR(?title)), "ausländer") ||
     CONTAINS(LCASE(STR(?title)), "stellenmeldepflicht") ||
-    CONTAINS(LCASE(STR(?title)), "vorläufige aufnahme") ||
-    CONTAINS(LCASE(STR(?title)), "vorübergehend")
+    CONTAINS(LCASE(STR(?title)), "flüchtling") ||
+    CONTAINS(LCASE(STR(?title)), "vorläufig aufgen") ||
+    CONTAINS(LCASE(STR(?title)), "vorübergehenden schutz") ||
+    CONTAINS(LCASE(STR(?title)), "vorübergehender schutz") ||
+    (
+      CONTAINS(LCASE(STR(?title)), "ausländer") &&
+      (
+        CONTAINS(LCASE(STR(?title)), "integration") ||
+        CONTAINS(LCASE(STR(?title)), "erwerb") ||
+        CONTAINS(LCASE(STR(?title)), "schutz") ||
+        CONTAINS(LCASE(STR(?title)), "asyl")
+      )
+    )
   )
+  FILTER(!CONTAINS(LCASE(STR(?title)), "invalidenversicherung"))
+  FILTER(!CONTAINS(LCASE(STR(?title)), "luftverkehr"))
+  FILTER(!CONTAINS(LCASE(STR(?title)), "reiseinformationssystem"))
   OPTIONAL { ?act jolux:dateEntryInForce ?inForce }
   OPTIONAL {
     ?act jolux:legalResourceGenre ?genreUri .
