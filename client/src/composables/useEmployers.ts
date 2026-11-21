@@ -7,6 +7,7 @@ export interface EmployerGroup {
   roles: Record<string, number>
   reason: string | null
   urls: string[]
+  tags?: string[]
 }
 
 export interface EmployersPayload {

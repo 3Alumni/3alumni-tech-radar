@@ -21,6 +21,7 @@ export interface EmployerGroup {
   roles: Record<string, number>;
   reason: string | null;
   urls: string[];
+  tags: string[];
 }
 
 @Injectable()
@@ -68,6 +69,7 @@ export class EmployersService {
         roles: {},
         reason: decision.reason,
         urls: [],
+        tags: [],
       };
       bucket.postings += 1;
       bucket.roles[posting.role] = (bucket.roles[posting.role] ?? 0) + 1;
@@ -75,6 +77,10 @@ export class EmployersService {
         bucket.urls.push(posting.url);
       }
       target.set(key, bucket);
+    }
+    const tags = await this.tags();
+    for (const group of [...outreach.values(), ...agencies.values()]) {
+      group.tags = tags.get(group.company.trim().toLowerCase()) ?? [];
     }
     return {
       basis: {
@@ -86,6 +92,22 @@ export class EmployersService {
       outreach: [...outreach.values()].sort(byPostings),
       agencies: [...agencies.values()].sort(byPostings),
     };
+  }
+
+  private async tags() {
+    const result = await this.db.pool.query<{ company_key: string; tag: string }>(
+      `SELECT company_key, tag
+       FROM company_tags
+       WHERE model = 'gpt-6-luna'
+       ORDER BY position, tag`,
+    );
+    const tags = new Map<string, string[]>();
+    for (const row of result.rows) {
+      const list = tags.get(row.company_key) ?? [];
+      list.push(row.tag);
+      tags.set(row.company_key, list);
+    }
+    return tags;
   }
 }
 

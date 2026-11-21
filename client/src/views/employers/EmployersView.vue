@@ -24,6 +24,7 @@ function rows(groups: EmployerGroup[], agency: boolean) {
       name: group.company,
       jobs: group.roles[role.value] ?? 0,
       agency,
+      tags: group.tags ?? [],
       url: group.urls[0] ?? '',
     }))
     .filter((row) => row.jobs > 0)
@@ -46,6 +47,24 @@ function resetFilters() {
   hideAgency.value = true
   role.value = ROLES[0]!.id
   showAll.value = false
+}
+
+const TAG_LABEL: Record<string, string> = {
+  junior: 'Junior',
+  internship: 'Internship',
+  apprenticeship: 'Apprenticeship',
+  'part-time': 'Part-time',
+  graduate: 'Graduate',
+}
+
+function tagLabel(tag: string) {
+  return TAG_LABEL[tag] ?? tag
+}
+
+function tagClass(tag: string) {
+  if (tag === 'junior' || tag === 'graduate') return 'tag-junior'
+  if (tag === 'internship' || tag === 'apprenticeship') return 'tag-partner'
+  return 'tag-agency'
 }
 </script>
 
@@ -96,6 +115,7 @@ function resetFilters() {
             <td data-label="Published jobs" class="num">{{ fmtNum(e.jobs) }}</td>
             <td data-label="Tags">
               <span class="tags">
+                <span v-for="tag in e.tags" :key="tag" :class="['tag', tagClass(tag)]">{{ tagLabel(tag) }}</span>
                 <span v-if="e.agency" class="tag tag-agency">Agency</span>
               </span>
             </td>
