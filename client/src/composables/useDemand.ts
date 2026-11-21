@@ -1,4 +1,5 @@
 import { computed, ref } from 'vue'
+import { API } from '@/lib/api'
 
 export interface DemandQuery {
   role: string
@@ -49,7 +50,7 @@ export function cantonMapName(name: string): string {
 async function load() {
   status.value = 'loading'
   try {
-    const res = await fetch('/api/demand')
+    const res = await fetch(`${API}/demand`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     data.value = (await res.json()) as DemandResponse
     status.value = 'ready'

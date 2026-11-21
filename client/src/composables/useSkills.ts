@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { API } from '@/lib/api'
 
 export interface SkillRow {
   label: string
@@ -33,7 +34,7 @@ async function load() {
   try {
     const rows = await Promise.all(
       ROLES.map(async (role) => {
-        const res = await fetch(`/api/skills?role=${role}`)
+        const res = await fetch(`${API}/skills?role=${role}`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return [role, (await res.json()) as SkillsPayload] as const
       }),

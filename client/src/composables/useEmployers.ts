@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { API } from '@/lib/api'
 
 export interface EmployerGroup {
   company: string
@@ -22,7 +23,7 @@ let started = false
 async function load() {
   status.value = 'loading'
   try {
-    const res = await fetch('/api/employers')
+    const res = await fetch(`${API}/employers`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     data.value = (await res.json()) as EmployersPayload
     status.value = 'ready'

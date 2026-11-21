@@ -1,2 +1,2 @@
-/** Live Nest API. The Vue app calls it directly. */
-export const API = 'http://127.0.0.1:3000'
+/** Live Nest API on Railway. The local Vue app calls it directly. */
+export const API = 'https://radar-api-production-cd96d4c5.up.railway.app'
