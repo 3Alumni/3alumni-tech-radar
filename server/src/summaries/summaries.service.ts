@@ -27,6 +27,20 @@ keyUpdates: a newly published number or act in the records that does not by itse
 Use [] when there are none. Do not invent items.
 Return JSON: {"text":"...","keyChanges":[],"keyUpdates":[]}`;
 
+const MARKET = `Reply in English only.
+You write one short letter section for non-technical staff at Powercoders.
+Powercoders trains refugees and migrants for IT jobs in Switzerland.
+Use only the facts in the JSON. Do not invent numbers, companies, or skills.
+Write 2 or 3 short paragraphs about the job ads, skills, or companies in the records.
+Name the largest figures first. Do not list every row.
+Do not mention asylum, residence status, status F, integration law, or job-registration duties.
+Do not say that those topics are absent.
+Every paragraph that states a figure must include the source name and the sourceUrl from that record.
+Also return two arrays of short strings. Do not start any item with "This".
+keyChanges: a skill or employer fact that should change what the team teaches or who they contact. Include the sourceUrl. Use [] when there are none.
+keyUpdates: other figures from the records worth knowing. Include the sourceUrl. Use [] when there are none.
+Return JSON: {"text":"...","keyChanges":[],"keyUpdates":[]}`;
+
 export interface Briefing {
   text: string;
   keyChanges: string[];
@@ -56,7 +70,7 @@ export class SummariesService {
    * Phrases records that are already stored. The model may not compute new numbers.
    * The same topic and the same records are read back from Postgres.
    */
-  async draft(records: Metric[], topicTitle?: string): Promise<Briefing> {
+  async draft(records: Metric[], topicTitle?: string, focus: "policy" | "market" = "policy"): Promise<Briefing> {
     if (records.length === 0) {
       return { text: "No fresh records.", keyChanges: [], keyUpdates: [] };
     }
@@ -67,7 +81,9 @@ export class SummariesService {
       topic: topicTitle ?? null,
       records: ordered.map(pack),
     };
-    const stored = await this.remember(cacheKey("topic", payload), () => this.writeTopic(payload));
+    const stored = await this.remember(cacheKey(focus, payload), () =>
+      this.writeTopic(payload, focus === "market" ? MARKET : SYSTEM),
+    );
     return { text: stored.text, keyChanges: stored.keyChanges, keyUpdates: stored.keyUpdates };
   }
 
@@ -91,9 +107,12 @@ export class SummariesService {
     };
   }
 
-  private async writeTopic(payload: { topic: string | null; records: ReturnType<typeof pack>[] }) {
+  private async writeTopic(
+    payload: { topic: string | null; records: ReturnType<typeof pack>[] },
+    system: string,
+  ) {
     const result = await completeJson<DraftResponse>({
-      system: SYSTEM,
+      system,
       user: JSON.stringify(payload),
     });
     return briefing(result, "OpenAI summary was empty");

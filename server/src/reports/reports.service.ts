@@ -48,7 +48,8 @@ export class ReportsService {
       throw new BadRequestException("Question must be A, B, C, or E");
     }
     const records = await this.recordsFor(question as Question);
-    return this.summaries.draft(records, title);
+    const focus = question === "E" ? "policy" : "market";
+    return this.summaries.draft(records, title, focus);
   }
 
   /** Skills and employers are stored as postings, not as question B or C metrics. */

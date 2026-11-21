@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import RadarLoader from '@/components/ui/RadarLoader.vue'
 import Icon from '@/components/ui/Icon.vue'
-import { ICON, fmtMonth, listJoin } from '@/lib/format'
+import { ICON, fmtDate, fmtMonth, fmtNum, listJoin } from '@/lib/format'
 import { parts } from '@/lib/links'
 import { API } from '@/lib/api'
 
@@ -60,33 +60,97 @@ async function load(key: SectionKey) {
   if (current?.text || current?.loading) return
   const section = SECTIONS.find((item) => item.key === key)
   if (!section) return
-  briefings.value = { ...briefings.value, [key]: { text: '', keyChanges: [], keyUpdates: [], loading: true, error: '' } }
+  briefings.value = { ...briefings.value, [key]: emptyBriefing(true) }
   try {
-    const response = await fetch(`${API}/questions/${section.question}/preview`)
-    if (!response.ok) throw new Error(`Summary ${response.status}`)
-    const body = (await response.json()) as { text?: string; keyChanges?: string[]; keyUpdates?: string[] }
-    briefings.value = {
-      ...briefings.value,
-      [key]: {
-        text: body.text ?? '',
-        keyChanges: body.keyChanges ?? [],
-        keyUpdates: body.keyUpdates ?? [],
-        loading: false,
-        error: '',
-      },
-    }
+    const briefing = key === 'policy' ? await policyBriefing() : await pageBriefing(key)
+    briefings.value = { ...briefings.value, [key]: briefing }
   } catch (e) {
     briefings.value = {
       ...briefings.value,
-      [key]: {
-        text: '',
-        keyChanges: [],
-        keyUpdates: [],
-        loading: false,
-        error: e instanceof Error ? e.message : String(e),
-      },
+      [key]: { ...emptyBriefing(false), error: e instanceof Error ? e.message : String(e) },
     }
   }
+}
+
+function emptyBriefing(loading: boolean): Briefing {
+  return { text: '', keyChanges: [], keyUpdates: [], loading, error: '' }
+}
+
+async function policyBriefing(): Promise<Briefing> {
+  const response = await fetch(`${API}/questions/E/preview`)
+  if (!response.ok) throw new Error(`Summary ${response.status}`)
+  const body = (await response.json()) as { text?: string; keyChanges?: string[]; keyUpdates?: string[] }
+  return {
+    text: body.text ?? '',
+    keyChanges: body.keyChanges ?? [],
+    keyUpdates: body.keyUpdates ?? [],
+    loading: false,
+    error: '',
+  }
+}
+
+async function pageBriefing(key: Exclude<SectionKey, 'policy'>): Promise<Briefing> {
+  const path = key === 'demand' ? '/demand' : key === 'skills' ? '/skills' : '/employers'
+  const response = await fetch(`${API}${path}`)
+  if (!response.ok) throw new Error(`Summary ${response.status}`)
+  const body = await response.json()
+  const text = key === 'demand' ? demandText(body) : key === 'skills' ? skillsText(body) : employersText(body)
+  return { text, keyChanges: [], keyUpdates: [], loading: false, error: '' }
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  'web-developer': 'Web developer',
+  'it-support': 'IT support',
+  'data-analyst': 'Data analyst',
+}
+const LANG_LABEL: Record<string, string> = { en: 'English', de: 'German' }
+
+function demandText(body: {
+  roles?: { role: string; lang: string | null; openings: number; sourceUrl: string; fetchedAt: string; cantons: { canton: string; postings: number }[] }[]
+}): string {
+  const roles = body.roles ?? []
+  if (!roles.length) return 'No saved ads on the Demand page yet.'
+  const groups = new Map<string, typeof roles>()
+  for (const role of roles) {
+    const list = groups.get(role.role) ?? []
+    list.push(role)
+    groups.set(role.role, list)
+  }
+  return [...groups.entries()].map(([role, rows]) => {
+    const counts = rows.map((row) => `${fmtNum(row.openings)} ${LANG_LABEL[row.lang ?? ''] ?? row.lang ?? ''}`.trim())
+    const top = rows.flatMap((row) => row.cantons).sort((a, b) => b.postings - a.postings)[0]
+    const where = top ? ` Most saved ads are in ${top.canton} (${fmtNum(top.postings)}).` : ''
+    const when = rows[0]?.fetchedAt ? ` · ${fmtDate(rows[0].fetchedAt.slice(0, 10))}` : ''
+    return `${ROLE_LABEL[role] ?? role}: ${counts.join(' and ')} ads.${where}\nSource: Adzuna, ${rows[0]?.sourceUrl ?? 'https://www.adzuna.ch/'}${when}`
+  }).join('\n\n')
+}
+
+function skillsText(body: {
+  basis?: { postings: number; sourceUrl: string; dictionaryUrl: string }
+  esco?: { label: string; count: number }[]
+}): string {
+  const ads = body.basis?.postings ?? 0
+  const skills = (body.esco ?? []).filter((skill) => skill.count > 0).slice(0, 6)
+  if (!ads || !skills.length) return 'No skills on the Skills page yet.'
+  const named = skills.map((skill) => `${skill.label} in ${fmtNum(skill.count)}`).join(', ')
+  return `${fmtNum(ads)} ads were read. Skills named most often: ${named}.\nSource: Adzuna, ${body.basis?.sourceUrl ?? 'https://www.adzuna.ch/'} · ESCO, ${body.basis?.dictionaryUrl ?? 'https://esco.ec.europa.eu/en/classification/skill_main'}`
+}
+
+function employersText(body: {
+  basis?: { postings: number; sourceUrl: string }
+  outreach?: { company: string; postings: number; urls: string[] }[]
+  agencies?: unknown[]
+}): string {
+  const ads = body.basis?.postings ?? 0
+  const companies = body.outreach ?? []
+  if (!ads || !companies.length) return 'No companies on the Employers page yet.'
+  const top = companies.slice(0, 5).map((company) => {
+    const link = company.urls[0] ?? body.basis?.sourceUrl ?? 'https://www.adzuna.ch/'
+    return `${company.company} has ${fmtNum(company.postings)} saved ads.\nSource: ${company.company}, ${link}`
+  })
+  const agencies = body.agencies?.length ?? 0
+  const intro = `${fmtNum(ads)} saved ads, ${fmtNum(companies.length)} companies to approach. ${fmtNum(agencies)} recruitment agencies are left off that list.\nSource: Adzuna, ${body.basis?.sourceUrl ?? 'https://www.adzuna.ch/'}`
+  return [intro, ...top].join('\n\n')
 }
 
 function touch() {
