@@ -9,20 +9,22 @@ import { useActiveIndex } from '@/composables/useActiveIndex'
 
 /** Average advertised salary per role, last 12 months. Native <dialog>: focus trap + Esc for free. */
 const { roles, isSample } = useSnapshot()
-const { roleId, open, close } = useSalaryDialog()
+const { roleId, chart, open, close } = useSalaryDialog()
 const dlg = ref<HTMLDialogElement | null>(null)
 const closeBtn = ref<HTMLButtonElement | null>(null)
 
 const role = computed(() => roles.value.find((r) => r.id === roleId.value) ?? null)
-const series = computed(() => role.value?.avgSalaryByMonth ?? [])
+const series = computed(() => chart.value?.points ?? role.value?.avgSalaryByMonth ?? [])
+const title = computed(() => chart.value?.title ?? role.value?.label ?? '')
+const note = computed(() => chart.value?.note ?? 'Average advertised salary in job ads, gross per year, all of Switzerland')
 const avg = computed(() => Math.round((mean(series.value, (m) => m.chf) ?? 0) / 100) * 100)
 const first = computed(() => series.value[0])
 const last = computed(() => series.value[series.value.length - 1])
 const pct = computed(() => (first.value && last.value ? Math.round((last.value.chf / first.value.chf - 1) * 1000) / 10 : 0))
 const y = computed(() => scaleLinear().domain([0, (max(series.value, (m) => m.chf) ?? 1) * 1.1]).range([0, 100]))
 const aria = computed(() =>
-  role.value && first.value && last.value
-    ? `Average advertised salary for ${role.value.label} per month, ${fmtMonth(first.value.month, true)} to ${fmtMonth(last.value.month, true)}: from ${fmtChf(first.value.chf)} to ${fmtChf(last.value.chf)}, average ${fmtChf(avg.value)}`
+  title.value && first.value && last.value
+    ? `Average advertised salary for ${title.value} per month, ${fmtMonth(first.value.month, true)} to ${fmtMonth(last.value.month, true)}: from ${fmtChf(first.value.chf)} to ${fmtChf(last.value.chf)}, average ${fmtChf(avg.value)}`
     : '',
 )
 const count = computed(() => series.value.length)
@@ -47,17 +49,17 @@ function onBackdrop(e: MouseEvent) {
 
 <template>
   <dialog ref="dlg" class="dlg" aria-labelledby="sal-h" @close="close" @click="onBackdrop">
-    <div v-if="role" class="dlg-in">
+    <div v-if="title" class="dlg-in">
       <div class="dlg-head">
         <div class="card-head">
           <p class="label muted">Average salary</p>
-          <h2 id="sal-h" class="h2">{{ role.label }}</h2>
+          <h2 id="sal-h" class="h2">{{ title }}</h2>
         </div>
         <button ref="closeBtn" type="button" class="icon-btn" aria-label="Close" @click="close">
           <Icon :path="ICON.close" />
         </button>
       </div>
-      <div class="seg" role="group" aria-label="Role">
+      <div v-if="!chart" class="seg" role="group" aria-label="Role">
         <button v-for="r in roles" :key="r.id" type="button" :aria-pressed="r.id === roleId" @click="open(r.id)">{{ r.label }}</button>
       </div>
       <div class="kpi">
@@ -99,7 +101,7 @@ function onBackdrop(e: MouseEvent) {
         </p>
       </div>
       <p class="small muted">
-        Average advertised salary in job ads, gross per year, all of Switzerland · k = CHF thousand<template v-if="isSample"> · Sample data</template>
+        {{ note }} · k = CHF thousand<template v-if="isSample && !chart"> · Sample data</template>
       </p>
     </div>
   </dialog>
