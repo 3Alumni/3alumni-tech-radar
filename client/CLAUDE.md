@@ -59,3 +59,11 @@ From `design-tokens.md` (Powercoders logo colours): action #B23149, action-stron
 - No API keys in the frontend; never `v-html` with source text; external links `rel="noopener noreferrer"`; no CDN scripts or tracking; pinned versions (`npm i -E`).
 - Never invent numbers; mark placeholder data clearly ("Sample data").
 - Ask before adding any library not listed here.
+
+## Git workflow
+
+- Always work on local `main` and push to `origin main`. Do not create feature branches.
+- **Ask for approval before every commit and push.** Summarise what changed and wait for an explicit "yes". Approval covers that one change only.
+- After approval, from the repo root: `git status` (check for secrets / build output) → `git add .` → `git commit -m "…"` → `git pull --rebase origin main` → `git push origin main`.
+- Before asking for approval, run `npm run build` in `client/` and make sure it passes.
+- If the pull has conflicts, stop and show them; do not force-push.
