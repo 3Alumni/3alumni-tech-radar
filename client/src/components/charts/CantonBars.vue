@@ -9,7 +9,7 @@ import type { CantonCount } from '@/lib/types'
  * Job ads per canton. Each bar is a toggle button: click to filter the page to that canton.
  * Bars use the same red shade as the canton on the map (shared shadeLevel), so list and map read as one.
  */
-const props = defineProps<{ cantons: CantonCount[]; selected: string }>()
+const props = withDefaults(defineProps<{ cantons: CantonCount[]; selected: string; unit?: string }>(), { unit: 'jobs' })
 const emit = defineEmits<{ pick: [canton: string] }>()
 
 const sorted = computed(() => [...props.cantons].sort((a, b) => descending(a.count, b.count)))
@@ -19,13 +19,13 @@ const level = computed(() => shadeLevel(top.value))
 </script>
 
 <template>
-  <ul class="bars" aria-label="Jobs by canton. Select a canton to filter the page.">
+  <ul class="bars" :aria-label="unit + ' by canton. Select a canton to filter the page.'">
     <li v-for="(c, i) in sorted" :key="c.canton">
       <button
         type="button"
         class="bar-row bar-btn has-tip"
         :aria-pressed="c.canton === selected"
-        :aria-label="`${c.canton}: ${fmtNum(c.count)} jobs. ${c.canton === selected ? 'Selected. Press to show all of Switzerland' : 'Press to show only ' + c.canton}`"
+        :aria-label="`${c.canton}: ${fmtNum(c.count)} ${unit}. ${c.canton === selected ? 'Selected. Press to show all of Switzerland' : 'Press to show only ' + c.canton}`"
         @click="emit('pick', c.canton)"
       >
         <span class="bar-name">{{ c.canton }}</span>

@@ -16,7 +16,10 @@ import type { CantonCount } from '@/lib/types'
  * Hover-only: tooltip + highlight; filtering happens in the bars and the Region select.
  * Map: BFS, GEOSTAT (non-commercial licence).
  */
-const props = defineProps<{ cantons: CantonCount[]; selected: string }>()
+const props = withDefaults(defineProps<{ cantons: CantonCount[]; selected: string; unit?: string; ratio?: number }>(), {
+  unit: 'jobs',
+  ratio: 0.64,
+})
 
 type Geo = Feature<Geometry, { id?: number }>
 const shapes = shallowRef<{ cantons: Geo[]; lakes: Geo[]; outline: FeatureCollection } | null>(null)
@@ -45,7 +48,7 @@ onMounted(async () => {
 
 const box = ref<HTMLElement | null>(null)
 const width = useElementWidth(box)
-const height = computed(() => Math.round(Math.max(width.value, 1) * 0.64))
+const height = computed(() => Math.round(Math.max(width.value, 1) * props.ratio))
 
 const path = computed(() => {
   if (!shapes.value || !width.value) return null
@@ -103,7 +106,7 @@ const labelled = computed(() => {
 // Text alternative: the map is hover-only, so screen readers get every count here.
 const summary = computed(() => {
   const list = [...props.cantons].sort((a, b) => b.count - a.count)
-  return 'Map of Switzerland, jobs by canton: ' + list.map((c) => `${c.canton} ${fmtNum(c.count)}`).join(', ')
+  return `Map of Switzerland, ${props.unit} by canton: ` + list.map((c) => `${c.canton} ${fmtNum(c.count)}`).join(', ')
 })
 
 const hoverId = ref<number | null>(null)
@@ -166,7 +169,7 @@ const labelEnd = computed(() => !!labelled.value && labelled.value.cx > width.va
         aria-hidden="true"
         :style="{ left: tip.cx + 'px', top: tip.cy + 'px' }"
       >
-        <template v-if="tip.data"><b>{{ tip.name }}</b> · {{ fmtNum(tip.data.count) }} jobs</template>
+        <template v-if="tip.data"><b>{{ tip.name }}</b> · {{ fmtNum(tip.data.count) }} {{ unit }}</template>
         <template v-else><b>{{ tip.name }}</b> · no data yet</template>
       </div>
     </div>

@@ -32,7 +32,7 @@ const error = ref('')
 let pending: Promise<void> | null = null
 
 export function usePeopleApi() {
-  return { groups: computed(() => group(metrics.value)), loading, error, ensure }
+  return { groups: computed(() => group(metrics.value)), rows: computed(() => metrics.value), loading, error, ensure }
 }
 
 async function ensure() {
